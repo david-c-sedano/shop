@@ -1,41 +1,19 @@
-#include <stdio.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <emscripten.h>
+#include <string>
+#include <vector>
 
 #define IMGUI_IMPLEMENTATION
 #include "imgui_single_file.h"
 
+#include "sqlite3.h"
+
 SDL_Window* g_Window = nullptr;
 SDL_GLContext g_GLContext = nullptr;
 
-void main_loop(void* arg) {
-    ImGuiIO& io = ImGui::GetIO();
-    
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        ImGui_ImplSDL2_ProcessEvent(&event);
-    }
-
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
-    ImGui::NewFrame();
-
-    ImGui::Begin("Hello, WASM!");
-    ImGui::Text("This is Dear ImGui running natively in your browser.");
-    if (ImGui::Button("Click Me")) {
-        printf("Button clicked!\n");
-    }
-    ImGui::End();
-
-    ImGui::Render();
-    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-    glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    
-    SDL_GL_SwapWindow(g_Window);
-}
+void main_loop(void* arg);
+void admin_prompt();
 
 int main(int, char**) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -62,4 +40,44 @@ int main(int, char**) {
     emscripten_set_main_loop_arg(main_loop, nullptr, 0, true);
 
     return 0;
+}
+
+void main_loop(void* arg) {
+    ImGuiIO& io = ImGui::GetIO();
+    
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        ImGui_ImplSDL2_ProcessEvent(&event);
+    }
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame();
+    ImGui::NewFrame();
+
+    admin_prompt();
+
+    ImGui::Render();
+    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    
+    SDL_GL_SwapWindow(g_Window);
+}
+
+std::string sql_error;
+std::vector<std::string> columns;
+std::vector<std::vector<std::string>> rows;
+
+char buf[4000] = "SELECT name, price_cents, quantity FROM items;";
+
+void admin_prompt() {
+    ImGui::Begin("Admin Console");
+
+    ImGui::InputText("Label", buf, IM_ARRAYSIZE(buf));
+
+    bool run =  ImGui::Button("Run SQL") 
+             || (ImGui::IsKeyDown(ImGuiMod_Ctrl) && ImGui::IsKeyPressed(ImGuiKey_Enter));
+    ImGui::SameLine();
+    ImGui::End();
 }
