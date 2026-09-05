@@ -4,4 +4,9 @@
 *.pdb
 *.ini
 *.a
+*.js
+**/node_modules/
+*.wasm
 cimgui/
+**/lib/
+**/lib_wasm/

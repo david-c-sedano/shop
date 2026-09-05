@@ -8,18 +8,16 @@ int main(int argc, char **argv) {
     NOB_GO_REBUILD_URSELF(argc, argv);
     Nob_Cmd cmd = {0};
 
-    // build raylib
-    if (!nob_file_exists("./raylib/lib/libraylib.a")) {
+    if (!nob_file_exists("./raylib/lib_wasm/libraylib.a")) {
         nob_set_current_dir("./raylib/src");
-        nob_cmd_append(&cmd, "make");
+        nob_cmd_append(&cmd, "make", "PLATFORM=PLATFORM_WEB", "-B");
         if (!nob_cmd_run(&cmd)) {
-            printf("\n\nfailed to build raylib!!\n");
+            printf("\n\nfailed to build raylib for WASM!\n");
             return 1;
         }
-        
         nob_set_current_dir("../..");
-        nob_mkdir_if_not_exists("./raylib/lib");
-        nob_rename("./raylib/src/libraylib.a", "./raylib/lib/libraylib.a");
+        nob_mkdir_if_not_exists("./raylib/lib_wasm");
+        nob_rename("./raylib/src/libraylib.web.a", "./raylib/lib_wasm/libraylib.a");
     }
 
     // generate ImGui C API 
@@ -38,57 +36,60 @@ int main(int argc, char **argv) {
     }
 
     // compile ImGUI and the rendering backend
-    if (!nob_file_exists("./lib")) {
-        nob_mkdir_if_not_exists("./lib");
+    if (!nob_file_exists("./lib_wasm")) {
+        nob_mkdir_if_not_exists("./lib_wasm");
 
-        nob_cmd_append(&cmd,  
-            "g++",
+        nob_cmd_append(&cmd,
+            "em++",
             "-I./imgui",
             "-I./cimgui",
-            "-c", "imgui_single_file.cpp", 
-            "-o", "./lib/cimgui.o"
+            "-c", "imgui_single_file.cpp",
+            "-o", "./lib_wasm/cimgui.o"
         );
         if (!nob_cmd_run(&cmd)) {
-            printf("\n\nfailed to compile ImGUI!\n");
+            printf("\n\nfailed to compile ImGUI for WASM!\n");
             return 1;
         }
 
         nob_cmd_append(&cmd,  
-            "g++",
+            "em++",
+            "-DPLATFORM_WEB",
             "-I./imgui",
             "-I./raylib/src",
             "-c", "./raylib/rlImGui.cpp",
-            "-o", "./lib/rlimgui.o"
+            "-o", "./lib_wasm/rlimgui.o"
         );
         if (!nob_cmd_run(&cmd)) {
-            printf("\n\nfailed to compile ImGUI Raylib Backend!\n");
+            printf("\n\nfailed to compile ImGUI Raylib Backend for WASM!\n");
             return 1;
         }
     }
 
     nob_cmd_append(&cmd,
-        "gcc",
+        "emcc",
         "-I./imgui",
         "-I./cimgui",
         "-I./raylib",
         "-I./raylib/src",
         "-I./sqlite3",
         "./sqlite3/sqlite3.c",
-        "./lib/cimgui.o",
-        "./lib/rlimgui.o",
+        "./lib_wasm/cimgui.o",
+        "./lib_wasm/rlimgui.o",
         "./src/shop.c",
-        "-L./raylib/lib",
+        "-L./raylib/lib_wasm",
+        "-sUSE_GLFW=3",
+        "-sASYNCIFY",
+        "-sALLOW_MEMORY_GROWTH=1",
         "-lraylib",
         "-lstdc++",
-        "-lopengl32",
-        "-lgdi32",
-        "-lwinmm",
-        "-o", "shop.exe"
+        "-o", "./shop.js"
     );
     if (!nob_cmd_run(&cmd)) {
-        printf("\n\nfailed to build `shop.exe`!!\n");
+        printf("\n\nfailed to build `shop.js` and `shop.wasm`!!\n");
         return 1;
     }
 
+    printf("\n\n\nuse: `python -m http.server 8000`\n");
+    printf("then open browser and goto: localhost:8000/shop.html\n");
     //done
 }
