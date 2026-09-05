@@ -1,4 +1,6 @@
 *.exe
 *.o
 *.pdb
+*.ini
+*.a
 cimgui/
