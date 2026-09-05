@@ -3,6 +3,7 @@
 #include "raymath.h"
 #include "cimgui.h"
 #include "rlImGui.h"
+#include "sqlite3.h"
 
 float ScaleToDPIF(float value) {
     return GetWindowScaleDPI().x * value;
