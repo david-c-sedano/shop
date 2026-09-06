@@ -7,6 +7,7 @@
 *.js
 **/node_modules/
 **/__pycache__/
+*.pyc
 *.wasm
 cimgui/
 **/lib/
