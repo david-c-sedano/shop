@@ -77,7 +77,7 @@ void admin_panel(Admin_Panel* admin) {
         // leave `dirty` as true even if `InputTextMultiline` returns false
     }
 
-    /* SPLITTER FOR RESIZING */
+    /* HORIZONTAL SPLITTER FOR RESIZING */
     ImGui_InvisibleButton(
         "##splitter",
         (ImVec2){ avail.x, splitter_h },
@@ -85,6 +85,13 @@ void admin_panel(Admin_Panel* admin) {
     );
     if (ImGui_IsItemHovered(0) || ImGui_IsItemActive()) {
         ImGui_SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+        // highlight the split
+        ImDrawList* list = ImGui_GetWindowDrawList();
+        ImDrawList_AddRectFilled(list,
+            ImGui_GetItemRectMin(),
+            ImGui_GetItemRectMax(),
+            ImGui_GetColorU32(ImGuiCol_SeparatorHovered)
+        );
     }
     if (ImGui_IsItemActive()) {
         admin->editor_h += ImGui_GetIO()->MouseDelta.y;

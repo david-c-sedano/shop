@@ -66,6 +66,19 @@ int main(int argc, char **argv) {
         }
     }
 
+    // cache SQL so im not recompiling a quarter million lines to change an icon
+    if (!nob_file_exists("./lib/sqlite3.o")) {
+        nob_cmd_append(&cmd,  
+            "gcc",
+            "-c", "./sqlite3/sqlite3.c", 
+            "-o", "./lib/sqlite3.o"
+        );
+        if (!nob_cmd_run(&cmd)) {
+            printf("\n\nfailed to compile sqlite3!\n");
+            return 1;
+        }
+    }
+
     nob_cmd_append(&cmd,
         "gcc",
         "-I./imgui",
@@ -73,7 +86,7 @@ int main(int argc, char **argv) {
         "-I./raylib",
         "-I./raylib/src",
         "-I./sqlite3",
-        "./sqlite3/sqlite3.c",
+        "./lib/sqlite3.o",
         "./lib/cimgui.o",
         "./lib/rlimgui.o",
         "./src/shop.c",
