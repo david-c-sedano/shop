@@ -6,6 +6,7 @@
 *.a
 *.js
 **/node_modules/
+**/__pycache__/
 *.wasm
 cimgui/
 **/lib/

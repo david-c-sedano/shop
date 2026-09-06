@@ -5,6 +5,13 @@
 #include "rlImGui.h"
 #include "sqlite3.h"
 
+#include "stdio.h"
+
+#define ARENA_IMPLEMENTATION
+#include "arena.h"
+
+#include "admin.c"
+
 float ScaleToDPIF(float value) {
     return GetWindowScaleDPI().x * value;
 }
@@ -22,44 +29,27 @@ int main(int argc, char* argv[]) {
 	SetTargetFPS(144);
 	rlImGuiSetup(true);
 
+    bool demo_window_open = false;
+    Text_Editor ed;
+    text_ed_init(&ed);
+    Admin_Panel admin;
+    admin.current_ed = &ed;
+
 	while (!WindowShouldClose()) {
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
-
 		rlImGuiBegin();
 
-		bool open = true;
-		ImGui_ShowDemoWindow(&open);
+        if (demo_window_open) {
+		    ImGui_ShowDemoWindow(&demo_window_open);
+        }
 
-		open = true;
-		if (ImGui_Begin("Test Window", &open, 0))
-		{
-			ImGui_TextUnformatted(ICON_FA_JEDI);
+        admin_panel(&admin);
 
-		}
-		ImGui_End();
-
-		// end ImGui Content
 		rlImGuiEnd();
-
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-			DrawText("Prssed", 0, 0, 20, RED);
-
-		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-			DrawText("Down", 0, 20, 20, GREEN);
-
-		if (IsWindowFocused())
-			DrawText("Focused", 100, 20, 20, WHITE);
-
 		EndDrawing();
-		//----------------------------------------------------------------------------------
 	}
 
-	// De-Initialization
-	//--------------------------------------------------------------------------------------   
     rlImGuiShutdown();
-	CloseWindow();        // Close window and OpenGL context
-	//--------------------------------------------------------------------------------------
-
-	return 0;
+	CloseWindow();
 }
