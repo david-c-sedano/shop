@@ -72,6 +72,7 @@ int main(int argc, char **argv) {
         "-I./raylib",
         "-I./raylib/src",
         "-I./sqlite3",
+        "-DPLATFORM_WEB",
         "./sqlite3/sqlite3.c",
         "./lib_wasm/cimgui.o",
         "./lib_wasm/rlimgui.o",
