@@ -12,6 +12,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "float.h"
 
 #define ARENA_IMPLEMENTATION
 #include "arena.h"
@@ -37,10 +38,9 @@ int main(int argc, char* argv[]) {
 
     bool demo_window_open = false;
     Text_Editor ed = {0};
-    text_ed_init(&ed);
+    init_text_ed(&ed);
     Admin_Panel admin = {0};
-    admin.split_h = 0.0;
-    admin.current_ed = &ed;
+    admin_panel_init(&admin, &ed);
     // defer arena_free(&ed.alloc);
     // NO DEFER? SCREW THIS GOOFY *** LANGUAGE
 
