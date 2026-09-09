@@ -28,6 +28,7 @@ typedef struct {
     sqlite3* db;
     SQL_Result prev_result; 
     Schema_List schema;
+    bool active;
 } Admin_Panel;
 
 void init_text_ed(Text_Editor *ed) {
@@ -119,8 +120,8 @@ bool schema_list_refresh(sqlite3* db, Schema_List* s) {
             s->capacity = new_cap;
         }
 
-        const char* name = sqlite3_column_text(stmt, 0);
-        const char* type = sqlite3_column_text(stmt, 1);
+        char* name = (char*)sqlite3_column_text(stmt, 0);
+        char* type = (char*)sqlite3_column_text(stmt, 1);
         s->names[s->count] = sql_copy_string(name);
         s->types[s->count] = sql_copy_string(type);
         s->count++;
@@ -190,7 +191,7 @@ SQL_Result sql_run(sqlite3* db, char* sql) {
                 }
 
                 for (int x=0; x<width; x++) {
-                    const char* text = sqlite3_column_text(stmt, x);
+                    char* text = (char*)sqlite3_column_text(stmt, x);
                     CELL(&result, x, result.height) = sql_copy_string(text);
                 }
 
@@ -269,8 +270,8 @@ void admin_panel(Admin_Panel* admin) {
                 if (sqlite3_prepare_v2(admin->db, sql, -1, &stmt, NULL) == SQLITE_OK) {
                     sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT);
                     while (sqlite3_step(stmt) == SQLITE_ROW) {
-                        const char* col_name = sqlite3_column_text(stmt, 0);
-                        const char* col_type = sqlite3_column_text(stmt, 1);
+                        char* col_name = (char*)sqlite3_column_text(stmt, 0);
+                        char* col_type = (char*)sqlite3_column_text(stmt, 1);
                         int pk = sqlite3_column_int(stmt, 2);
                         ImGui_Bullet();
                         ImGui_SameLine();

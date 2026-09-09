@@ -20,6 +20,9 @@
 #include "admin.c"
 #include "web_clipboard.c"
 
+void shop_render_pass(RenderTexture2D target, Shader shader);
+void ui_render_pass(Admin_Panel* admin);
+
 int main(int argc, char* argv[]) {
 	int screen_width = 1280;
 	int screen_height = 800;
@@ -36,7 +39,6 @@ int main(int argc, char* argv[]) {
     install_paste_hook();
 #endif
 
-    bool demo_window_open = false;
     Text_Editor ed = {0};
     init_text_ed(&ed);
     Admin_Panel admin = {0};
@@ -50,23 +52,31 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    int render_width = 1000;
+    int render_height = 800;
+    RenderTexture2D target = LoadRenderTexture(render_width, render_height);
+    Shader crt = LoadShader("./src/shop.vs", "./src/shop.fs");
+    int resolution_loc = GetShaderLocation(crt, "resolution");
+    Vector2 resolution = {(float)target.texture.width, (float)target.texture.height};
+    SetShaderValue(crt, resolution_loc, &resolution, SHADER_UNIFORM_VEC2);
+
 	while (!WindowShouldClose()) {
-		BeginDrawing();
-		ClearBackground(DARKGRAY);
-
-		rlImGuiBegin();
-
-#ifdef PLATFORM_WEB
-        web_clipboard_flush();
-#endif
-
-        if (demo_window_open) {
-		    ImGui_ShowDemoWindow(&demo_window_open);
+        // INPUT
+        bool admin_shortcut = (IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) && IsKeyPressed(KEY_P);
+        if (admin_shortcut) {
+            admin.active = !admin.active;
         }
 
-        admin_panel(&admin);
+        BeginTextureMode(target);
+        ClearBackground(DARKGRAY);
+            const char* text = "deez nuts";
+            DrawText(text, 100, screen_height/2, 120, GREEN);
+        EndTextureMode();
 
-		rlImGuiEnd();
+		BeginDrawing();
+            ClearBackground(BLACK);
+            shop_render_pass(target, crt);
+            ui_render_pass(&admin);
 		EndDrawing();
 	}
 
@@ -75,4 +85,42 @@ int main(int argc, char* argv[]) {
     arena_free(&ed.alloc);
     rlImGuiShutdown();
 	CloseWindow();
+}
+
+void shop_render_pass(RenderTexture2D target, Shader shader) {
+    // DUMP!!!
+    float window_w = (float)GetScreenWidth();
+    float window_h = (float)GetScreenHeight();
+    float target_w = (float)target.texture.width;
+    float target_h = (float)target.texture.height;
+    float scale = fminf(window_w / target_w, window_h / target_h);
+    float draw_w = target_w * scale;
+    float draw_h = target_h * scale;
+
+    BeginShaderMode(shader);
+    Rectangle source = { 0,0,target_w,-target_h };
+    Rectangle dest = { 
+        (window_w - draw_w) * 0.5f, (window_h - draw_h) * 0.5f, 
+        draw_w, draw_h
+    };
+    DrawTexturePro(
+        target.texture,
+        source,
+        dest,
+        (Vector2){0, 0},
+        0.0f,
+        WHITE
+    );
+    EndShaderMode();
+}
+
+void ui_render_pass(Admin_Panel* admin) {
+    rlImGuiBegin();
+#ifdef PLATFORM_WEB
+    web_clipboard_flush();
+#endif
+    if (admin->active) {
+        admin_panel(admin);
+    }
+    rlImGuiEnd();
 }
