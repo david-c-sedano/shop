@@ -4,6 +4,12 @@
 #define NOB_IMPLEMENTATION
 #include "nob.h"
 
+#if defined(_WIN32)
+#define PYTHON "python"
+#elif defined(__APPLE__)
+#define PYTHON "python3"
+#endif
+
 int main(int argc, char **argv) {
     NOB_GO_REBUILD_URSELF(argc, argv);
     Nob_Cmd cmd = {0};
@@ -24,7 +30,7 @@ int main(int argc, char **argv) {
     if (!nob_file_exists("./cimgui")) {
         nob_mkdir_if_not_exists("cimgui");
         nob_cmd_append(&cmd,
-            "python",
+            PYTHON,
             "dear_bindings/dear_bindings.py",
             "--output", "cimgui/cimgui",
             "./imgui/imgui.h"

@@ -4,6 +4,12 @@
 #define NOB_IMPLEMENTATION
 #include "nob.h"
 
+#if defined(_WIN32)
+#define PYTHON "python"
+#elif defined(__APPLE__)
+#define PYTHON "python3"
+#endif
+
 int main(int argc, char **argv) {
     NOB_GO_REBUILD_URSELF(argc, argv);
     Nob_Cmd cmd = {0};
@@ -26,7 +32,7 @@ int main(int argc, char **argv) {
     if (!nob_file_exists("./cimgui")) {
         nob_mkdir_if_not_exists("cimgui");
         nob_cmd_append(&cmd,
-            "python",
+            PYTHON,
             "dear_bindings/dear_bindings.py",
             "--output", "cimgui/cimgui",
             "./imgui/imgui.h"
@@ -79,6 +85,7 @@ int main(int argc, char **argv) {
         }
     }
 
+#if defined(_WIN32)
     nob_cmd_append(&cmd,
         "gcc",
         "-I./imgui",
@@ -98,10 +105,33 @@ int main(int argc, char **argv) {
         "-lwinmm",
         "-o", "shop.exe"
     );
+#elif defined(__APPLE__)
+    nob_cmd_append(&cmd,
+        "gcc",
+        "-I./imgui",
+        "-I./cimgui",
+        "-I./raylib",
+        "-I./raylib/src",
+        "-I./sqlite3",
+        "./lib/sqlite3.o",
+        "./lib/cimgui.o",
+        "./lib/rlimgui.o",
+        "./src/shop.c",
+        "-L./raylib/lib",
+        "-lraylib",
+        "-lstdc++",
+        "-framework", "OpenGL",
+        "-framework", "Cocoa",
+        "-framework", "IOKit",
+        "-framework", "CoreVideo",
+        "-framework", "QuartzCore",
+        "-o", "shop"
+    );
+#endif
+
     if (!nob_cmd_run(&cmd)) {
         printf("\n\nfailed to build `shop.exe`!!\n");
         return 1;
     }
-
     //done
 }
