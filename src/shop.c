@@ -17,6 +17,10 @@
 #define ARENA_IMPLEMENTATION
 #include "arena.h"
 
+#include "shop.h"
+#include "colors.c"
+#include "shaders.c"
+#include "items.c"
 #include "admin.c"
 #include "web_clipboard.c"
 
@@ -24,58 +28,72 @@ void shop_render_pass(RenderTexture2D target, Shader shader);
 void ui_render_pass(Admin_Panel* admin);
 
 int main(int argc, char* argv[]) {
+    // Global setup, and rlImGui
 	int screen_width = 1280;
 	int screen_height = 800;
-
 	SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
 	InitWindow(screen_width, screen_height, "shop");
 	SetTargetFPS(144);
 	rlImGuiSetup(true);
 
 #ifdef PLATFORM_WEB
+    // clipboard hack for web
     ImGuiPlatformIO* pio = ImGui_GetPlatformIO();
     pio->Platform_GetClipboardTextFn = web_sync_clipboard_is_fricked;
     pio->Platform_SetClipboardTextFn = web_set_clipboard;
     install_paste_hook();
 #endif
 
+    // Admin UI Setup
     Text_Editor ed = {0};
     init_text_ed(&ed);
     Admin_Panel admin = {0};
     admin_panel_init(&admin, &ed);
-    // defer arena_free(&ed.alloc);
-    // NO DEFER? SCREW THIS GOOFY *** LANGUAGE
 
+    // Database setup
     int rc = sqlite3_open(":memory:", &admin.db); // NO PERSISTANT DB FOR NOW!!
     if (rc != SQLITE_OK) {
         printf("sqlite open failed: `%s`\n", sqlite3_errmsg(admin.db));
         return 1;
     }
 
+    // Renderer setup
     int render_width = 1000;
     int render_height = 800;
     RenderTexture2D target = LoadRenderTexture(render_width, render_height);
-    Shader crt = LoadShader("./src/shop.vs", "./src/shop.fs");
+    Shader crt = LoadShaderFromMemory(VERTEX, FRAGMENT);
     int resolution_loc = GetShaderLocation(crt, "resolution");
+    int time_loc = GetShaderLocation(crt, "time");
     Vector2 resolution = {(float)target.texture.width, (float)target.texture.height};
     SetShaderValue(crt, resolution_loc, &resolution, SHADER_UNIFORM_VEC2);
 
+    // actual Shop setup
+    Shop shop;
+    init_shop_items(&shop);
+
 	while (!WindowShouldClose()) {
         // INPUT
-        bool admin_shortcut = (IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) && IsKeyPressed(KEY_P);
+        bool admin_shortcut = (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_P);
         if (admin_shortcut) {
             admin.active = !admin.active;
         }
+        
+        // UPDATE
+        update_shop(&shop);
 
+        // DRAW
         BeginTextureMode(target);
-        ClearBackground(DARKGRAY);
-            const char* text = "deez nuts";
-            DrawText(text, 100, screen_height/2, 120, GREEN);
+        ClearBackground(SHOP_BG);
+            draw_shop_display(&shop);
         EndTextureMode();
 
 		BeginDrawing();
             ClearBackground(BLACK);
+
+            float time = (float)GetTime();
+            SetShaderValue(crt, time_loc, &time, SHADER_UNIFORM_FLOAT);
             shop_render_pass(target, crt);
+
             ui_render_pass(&admin);
 		EndDrawing();
 	}

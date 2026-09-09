@@ -4,33 +4,6 @@
 #define MIN_SCHEMA_W 100.0
 #define CELL(r, x, y) ((r)->cells[(y)*(r)->width+(x)])
 
-typedef struct {
-    char **columns,**cells;
-    int width,height;
-    char* error;
-} SQL_Result;
-
-typedef struct {
-    char **names, **types;
-    int count, capacity;
-} Schema_List;
-
-typedef struct {
-    char* data;
-    size_t count,capacity;
-    bool dirty;
-    Arena alloc; 
-} Text_Editor;
-
-typedef struct {
-    Text_Editor* current_ed;
-    float split_h,split_v;
-    sqlite3* db;
-    SQL_Result prev_result; 
-    Schema_List schema;
-    bool active;
-} Admin_Panel;
-
 void init_text_ed(Text_Editor *ed) {
     ed->alloc = (Arena){0};
     ed->capacity = 1024;
