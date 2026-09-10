@@ -43,25 +43,32 @@ typedef enum {
     // ACCOUNT_SCREEN,
     // CHECKOUT_SCREEN,
     // IDK??
-} Screen_Kind;
+} Screen;
 
 typedef struct {
+    Admin_Panel admin;
     Item* items;
     int item_count, item_cap;
     float scroll, scroll_target;
     Camera3D camera;
-    RenderTexture2D texture;
+    RenderTexture2D render_target;
     Shader shader;
     int time_loc; // cache this for perf
-    Screen_Kind screen;
-    Admin_Panel admin;
+
+    Screen screen;
+    bool transitioning;
+    float transition_alpha;
+    bool fading_out;
+    Screen transition_target;
 } Shop;
 
 void shop_render_pass(Shop* shop);
 void ui_render_pass(Shop* shop);
+void screen_swap(Shop* shop, Screen screen);
 
 bool init_shop(Shop *shop);
 void update_shop(Shop *shop);
 void draw_shop(Shop *shop);
+
 
 #endif

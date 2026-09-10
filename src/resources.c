@@ -1,5 +1,5 @@
 
-
+// hold colors here as well
 const Color SHOP_BG = { 250, 247, 220, 255 };
 const Color SHOP_BG_ALT = { 242, 235, 190, 255 };
 const Color SHOP_SHADOW = { 184, 174, 139, 255 };
@@ -17,3 +17,10 @@ const Color SHOP_YELLOW = { 255, 210, 60, 255 };
 const Color SHOP_INK = { 73, 61, 44, 255 };
 const Color SHOP_TEXT_MUTED = { 135, 122, 92, 255 };
 const Color SHOP_WHITE = { 255, 253, 242, 255 };
+
+// textures
+Texture2D LOGO;
+
+void init_textures() {
+    LOGO = LoadTexture("./resources/PEAK_Software_Logo.png");
+}

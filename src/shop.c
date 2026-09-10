@@ -18,7 +18,7 @@
 #include "arena.h"
 
 #include "shop.h"
-#include "colors.c"
+#include "resources.c"
 #include "shaders.c"
 #include "item_display.c"
 #include "admin.c"
@@ -31,6 +31,7 @@ int main(int argc, char* argv[]) {
 	SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
 	InitWindow(screen_width, screen_height, "shop");
 	SetTargetFPS(144);
+    init_textures();
 	rlImGuiSetup(true);
 
 #ifdef PLATFORM_WEB
@@ -58,7 +59,7 @@ int main(int argc, char* argv[]) {
         update_shop(&shop);
 
         // DRAW
-        BeginTextureMode(shop.texture);
+        BeginTextureMode(shop.render_target);
         ClearBackground(SHOP_BG);
             draw_shop(&shop);
         EndTextureMode();
@@ -80,7 +81,7 @@ int main(int argc, char* argv[]) {
 void shop_render_pass(Shop* shop) {
     int time_loc = shop->time_loc;
     float time = (float)GetTime();
-    RenderTexture2D target = shop->texture;
+    RenderTexture2D target = shop->render_target;
     Shader shader = shop->shader;
     SetShaderValue(shader, time_loc, &time, SHADER_UNIFORM_FLOAT);
 
@@ -120,6 +121,14 @@ void ui_render_pass(Shop* shop) {
     rlImGuiEnd();
 }
 
+void screen_swap(Shop* shop, Screen target) {
+    if (shop->transitioning) return;
+    shop->transitioning = true;
+    shop->fading_out = true;
+    shop->transition_target = target;
+    shop->transition_alpha = 0.0f;
+}
+
 bool init_shop(Shop *shop) {
     // Admin UI Setup
     Admin_Panel* admin = &shop->admin;
@@ -143,15 +152,34 @@ bool init_shop(Shop *shop) {
     shop->time_loc = GetShaderLocation(shop->shader, "time");
     Vector2 resolution = {(float)target.texture.width, (float)target.texture.height};
     SetShaderValue(shop->shader, resolution_loc, &resolution, SHADER_UNIFORM_VEC2);
-    shop->texture = target;
+    shop->render_target = target;
 
     // actual Shop setup
     init_shop_items(shop);
-    shop->screen = DISPLAY_SCREEN;
+    shop->screen = LOAD_SCREEN;
     return true;
 }
 
 void update_shop(Shop *shop) {
+    float dt = GetFrameTime();
+    if (shop->transitioning) {
+        float speed = 1.5;
+        if (shop->fading_out) {
+            shop->transition_alpha += speed * dt;
+            if (shop->transition_alpha >= 1.0) {
+                shop->transition_alpha = 1.0;
+                shop->screen = shop->transition_target;
+                shop->fading_out = false;
+            }
+        } else {
+            shop->transition_alpha -= speed * dt;
+            if (shop->transition_alpha <= 0.0) {
+                shop->transition_alpha = 0.0;
+                shop->transitioning = false;
+            }
+        }
+    }
+
     switch (shop->screen) {
     case LOAD_SCREEN:
         break;
@@ -166,9 +194,49 @@ void update_shop(Shop *shop) {
 }
 
 void draw_shop(Shop *shop) {
+    float screen_w = shop->render_target.texture.width;
+    float screen_h = shop->render_target.texture.height;
+
     switch (shop->screen) {
-    case LOAD_SCREEN:
-        break;
+    case LOAD_SCREEN: {
+        // calculate logo centering and draw 
+        float logo_area_h = screen_h - 140.0;
+        float scale = fminf(screen_w/(float)LOGO.width, logo_area_h/(float)LOGO.height);
+        scale *= 0.8;
+        float draw_w = LOGO.width * scale;
+        float draw_h = LOGO.height * scale;
+        Rectangle src = { 0,0, (float)LOGO.width, (float)LOGO.height };
+        Rectangle dest = { 
+            (screen_w - draw_w)/2, (logo_area_h - draw_h)/2, 
+            draw_w, draw_h 
+        };
+        DrawTexturePro(LOGO, src, dest, (Vector2){0,0}, 0.0, WHITE);
+
+        // goofy loading bar
+        float bar_w = 800.0; 
+        float bar_h = 30.0; 
+        float bar_x = (screen_w - bar_w) * 0.5; 
+        float bar_y = screen_h - 130.0; 
+        float elapsed = (float)GetTime();
+        // `static` is incredibly good for throwaway gags
+        static float progress = 0.0;
+        static float target = 0.0;
+        if (elapsed < 4.0) {
+            if (fabsf(progress - target) < 0.02) {
+                target = (float)GetRandomValue(10, 90) / 100.0;
+            }
+        } else {
+            target = 1.0;
+        }
+        progress = Lerp(progress, target, 3.0 * GetFrameTime());
+        DrawRectangleRounded(
+            (Rectangle){bar_x, bar_y, bar_w * progress, bar_h},
+            1.0, 5, SHOP_GREEN
+        );
+        if (elapsed > 5.0) {
+            screen_swap(shop, DISPLAY_SCREEN);
+        }
+    }break;
 
     case HOME_SCREEN:
         break;
@@ -177,6 +245,9 @@ void draw_shop(Shop *shop) {
         draw_item_display(shop);
         break;
     }
-}
 
+    if (shop->transition_alpha > 0.0) {
+        DrawRectangle(0,0, screen_w, screen_h, Fade(BLACK, shop->transition_alpha));
+    }
+}
 
