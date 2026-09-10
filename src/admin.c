@@ -205,6 +205,7 @@ rollback:
 }
 
 void admin_panel_init(Admin_Panel *admin, Text_Editor* ed) {
+    memset(admin, 0, sizeof(Admin_Panel));
     admin->split_h = 200.0;
     admin->split_v = 150.0;
     admin->current_ed = ed;

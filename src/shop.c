@@ -20,7 +20,7 @@
 #include "shop.h"
 #include "colors.c"
 #include "shaders.c"
-#include "items.c"
+#include "item_display.c"
 #include "admin.c"
 #include "web_clipboard.c"
 
@@ -41,69 +41,49 @@ int main(int argc, char* argv[]) {
     install_paste_hook();
 #endif
 
-    // Admin UI Setup
-    Text_Editor ed = {0};
-    init_text_ed(&ed);
-    Admin_Panel admin = {0};
-    admin_panel_init(&admin, &ed);
-
-    // Database setup
-    int rc = sqlite3_open(":memory:", &admin.db); // NO PERSISTANT DB FOR NOW!!
-    if (rc != SQLITE_OK) {
-        printf("sqlite open failed: `%s`\n", sqlite3_errmsg(admin.db));
+    Shop shop = {0};
+    bool ok = init_shop(&shop);
+    if (!ok) {
         return 1;
     }
-
-    // Renderer setup
-    int render_width = 1000;
-    int render_height = 800;
-    RenderTexture2D target = LoadRenderTexture(render_width, render_height);
-    Shader crt = LoadShaderFromMemory(VERTEX, FRAGMENT);
-    int resolution_loc = GetShaderLocation(crt, "resolution");
-    int time_loc = GetShaderLocation(crt, "time");
-    Vector2 resolution = {(float)target.texture.width, (float)target.texture.height};
-    SetShaderValue(crt, resolution_loc, &resolution, SHADER_UNIFORM_VEC2);
-
-    // actual Shop setup
-    Shop shop;
-    init_shop_items(&shop);
 
 	while (!WindowShouldClose()) {
         // INPUT
         bool admin_shortcut = (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_A);
         if (admin_shortcut) {
-            admin.active = !admin.active;
+            shop.admin.active = !shop.admin.active;
         }
         
         // UPDATE
         update_shop(&shop);
 
         // DRAW
-        BeginTextureMode(target);
+        BeginTextureMode(shop.texture);
         ClearBackground(SHOP_BG);
-            draw_shop_display(&shop);
+            draw_shop(&shop);
         EndTextureMode();
 
 		BeginDrawing();
             ClearBackground(BLACK);
-
-            float time = (float)GetTime();
-            SetShaderValue(crt, time_loc, &time, SHADER_UNIFORM_FLOAT);
-            shop_render_pass(target, crt);
-
-            ui_render_pass(&admin);
+            shop_render_pass(&shop);
+            ui_render_pass(&shop);
 		EndDrawing();
 	}
 
-    sql_result_free(&admin.prev_result);
-    sqlite3_close(admin.db);
-    arena_free(&ed.alloc);
+    sql_result_free(&shop.admin.prev_result);
+    sqlite3_close(shop.admin.db);
+    arena_free(&shop.admin.current_ed->alloc);
     rlImGuiShutdown();
 	CloseWindow();
 }
 
-void shop_render_pass(RenderTexture2D target, Shader shader) {
-    // DUMP!!!
+void shop_render_pass(Shop* shop) {
+    int time_loc = shop->time_loc;
+    float time = (float)GetTime();
+    RenderTexture2D target = shop->texture;
+    Shader shader = shop->shader;
+    SetShaderValue(shader, time_loc, &time, SHADER_UNIFORM_FLOAT);
+
     float window_w = (float)GetScreenWidth();
     float window_h = (float)GetScreenHeight();
     float target_w = (float)target.texture.width;
@@ -129,13 +109,74 @@ void shop_render_pass(RenderTexture2D target, Shader shader) {
     EndShaderMode();
 }
 
-void ui_render_pass(Admin_Panel* admin) {
+void ui_render_pass(Shop* shop) {
     rlImGuiBegin();
 #ifdef PLATFORM_WEB
     web_clipboard_flush();
 #endif
-    if (admin->active) {
-        admin_panel(admin);
+    if (shop->admin.active) {
+        admin_panel(&shop->admin);
     }
     rlImGuiEnd();
 }
+
+bool init_shop(Shop *shop) {
+    // Admin UI Setup
+    Admin_Panel* admin = &shop->admin;
+    Text_Editor* ed = (Text_Editor*)malloc(sizeof(Text_Editor));
+    init_text_ed(ed);
+    admin_panel_init(admin, ed);
+
+    // Database setup
+    int rc = sqlite3_open(":memory:", &admin->db); // NO PERSISTANT DB FOR NOW!!
+    if (rc != SQLITE_OK) {
+        printf("sqlite open failed: `%s`\n", sqlite3_errmsg(admin->db));
+        return false;
+    }
+
+    // Renderer setup
+    int render_width = 1000;
+    int render_height = 800;
+    RenderTexture2D target = LoadRenderTexture(render_width, render_height);
+    shop->shader = LoadShaderFromMemory(VERTEX, FRAGMENT);
+    int resolution_loc = GetShaderLocation(shop->shader, "resolution");
+    shop->time_loc = GetShaderLocation(shop->shader, "time");
+    Vector2 resolution = {(float)target.texture.width, (float)target.texture.height};
+    SetShaderValue(shop->shader, resolution_loc, &resolution, SHADER_UNIFORM_VEC2);
+    shop->texture = target;
+
+    // actual Shop setup
+    init_shop_items(shop);
+    shop->screen = DISPLAY_SCREEN;
+    return true;
+}
+
+void update_shop(Shop *shop) {
+    switch (shop->screen) {
+    case LOAD_SCREEN:
+        break;
+
+    case HOME_SCREEN:
+        break;
+
+    case DISPLAY_SCREEN:
+        update_item_display(shop);
+        break;
+    }
+}
+
+void draw_shop(Shop *shop) {
+    switch (shop->screen) {
+    case LOAD_SCREEN:
+        break;
+
+    case HOME_SCREEN:
+        break;
+
+    case DISPLAY_SCREEN:
+        draw_item_display(shop);
+        break;
+    }
+}
+
+

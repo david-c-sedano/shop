@@ -28,7 +28,7 @@ void init_shop_items(Shop* shop) {
     shop->item_count = 4;
 }
 
-void update_shop(Shop* shop) {
+void update_item_display(Shop* shop) {
     float wheel = GetMouseWheelMove();
     shop->scroll_target -= wheel * 2.0;
     if (IsKeyPressed(KEY_RIGHT)) {
@@ -43,7 +43,7 @@ void update_shop(Shop* shop) {
     shop->scroll = Lerp(shop->scroll, shop->scroll_target, 1.0-powf(0.001, GetFrameTime()));
 }
 
-void draw_shop_display(Shop* shop) {
+void draw_item_display(Shop* shop) {
     Camera3D camera = shop->camera;
     camera.position.x = shop->scroll;
     camera.target.x = shop->scroll;
