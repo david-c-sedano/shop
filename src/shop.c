@@ -24,9 +24,6 @@
 #include "admin.c"
 #include "web_clipboard.c"
 
-void shop_render_pass(RenderTexture2D target, Shader shader);
-void ui_render_pass(Admin_Panel* admin);
-
 int main(int argc, char* argv[]) {
     // Global setup, and rlImGui
 	int screen_width = 1280;
@@ -73,7 +70,7 @@ int main(int argc, char* argv[]) {
 
 	while (!WindowShouldClose()) {
         // INPUT
-        bool admin_shortcut = (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_P);
+        bool admin_shortcut = (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_A);
         if (admin_shortcut) {
             admin.active = !admin.active;
         }

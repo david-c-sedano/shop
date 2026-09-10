@@ -1,4 +1,7 @@
 
+#ifndef SHOP_ONCE
+#define SHOP_ONCE
+
 typedef struct {
     char **columns,**cells;
     int width,height;
@@ -39,3 +42,8 @@ typedef struct {
     float scroll, scroll_target;
     Camera3D camera;
 } Shop;
+
+void shop_render_pass(RenderTexture2D target, Shader shader);
+void ui_render_pass(Admin_Panel* admin);
+
+#endif
