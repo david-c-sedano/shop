@@ -18,11 +18,12 @@
 #include "arena.h"
 
 #include "shop.h"
-#include "resources.c"
+#include "assets.c"
 #include "shaders.c"
 #include "item_display.c"
 #include "admin.c"
 #include "web_clipboard.c"
+#include "shop_db.c"
 
 int main(int argc, char* argv[]) {
     // Global setup, and rlImGui
@@ -93,6 +94,7 @@ void shop_render_pass(Shop* shop) {
     float draw_h = target_h * scale;
 
     BeginShaderMode(shader);
+
     Rectangle source = { 0,0,target_w,-target_h };
     Rectangle dest = { 
         (window_w - draw_w) * 0.5f, (window_h - draw_h) * 0.5f, 
@@ -136,7 +138,7 @@ bool init_shop(Shop *shop) {
     admin_panel_init(admin, ed);
 
     // Database setup
-    int rc = sqlite3_open(":memory:", &admin->db); // NO PERSISTANT DB FOR NOW!!
+    int rc = sqlite3_open("assets/shop.db", &admin->db); // NO PERSISTANT DB FOR NOW!!
     if (rc != SQLITE_OK) {
         printf("sqlite open failed: `%s`\n", sqlite3_errmsg(admin->db));
         return false;

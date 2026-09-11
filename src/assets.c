@@ -22,5 +22,9 @@ const Color SHOP_WHITE = { 255, 253, 242, 255 };
 Texture2D LOGO;
 
 void init_textures() {
+<<<<<<< HEAD:src/assets.c
+    LOGO = LoadTexture("./assets/PEAK_Software_Logo.png");
+=======
     LOGO = LoadTexture("resources/PEAK_Software_Logo.png");
+>>>>>>> 8de87ebb4533796f2988e6fe0723d25091063acd:src/resources.c
 }
