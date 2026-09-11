@@ -61,7 +61,6 @@ int main(int argc, char* argv[]) {
 
         // DRAW
         BeginTextureMode(shop.render_target);
-        ClearBackground(SHOP_BG);
             draw_shop(&shop);
         EndTextureMode();
 
@@ -201,6 +200,7 @@ void draw_shop(Shop *shop) {
 
     switch (shop->screen) {
     case LOAD_SCREEN: {
+        ClearBackground((Color){ 230,230,230,255 });
         // calculate logo centering and draw 
         float logo_area_h = screen_h - 140.0;
         float scale = fminf(screen_w/(float)LOGO.width, logo_area_h/(float)LOGO.height);
@@ -244,6 +244,7 @@ void draw_shop(Shop *shop) {
         break;
 
     case DISPLAY_SCREEN:
+        ClearBackground(SHOP_BG);
         draw_item_display(shop);
         break;
     }
