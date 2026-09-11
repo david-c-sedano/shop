@@ -9,6 +9,7 @@
 **/__pycache__/
 *.pyc
 *.wasm
+*.data
 cimgui/
 **/lib/
 **/lib_wasm/
