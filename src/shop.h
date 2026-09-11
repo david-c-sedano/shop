@@ -31,6 +31,12 @@ typedef struct {
 
 // I am trying REALLY HARD right now to NOT write an entity system...
 typedef struct {
+    int id;
+    char name[128];
+    char description[512];
+    float price;
+    Texture2D texture;
+    bool has_texture;
     Model model;
     Vector3 size;
     float scale;
@@ -45,7 +51,7 @@ typedef enum {
     // IDK??
 } Screen;
 
-typedef struct {
+typedef struct Shop {
     Admin_Panel admin;
     Item* items;
     int item_count, item_cap;

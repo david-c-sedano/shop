@@ -23,6 +23,7 @@
 #include "item_display.c"
 #include "admin.c"
 #include "web_clipboard.c"
+#include "shop_db.c"
 
 int main(int argc, char* argv[]) {
     // Global setup, and rlImGui
@@ -137,7 +138,7 @@ bool init_shop(Shop *shop) {
     admin_panel_init(admin, ed);
 
     // Database setup
-    int rc = sqlite3_open(":memory:", &admin->db); // NO PERSISTANT DB FOR NOW!!
+    int rc = sqlite3_open("assets/shop.db", &admin->db); // NO PERSISTANT DB FOR NOW!!
     if (rc != SQLITE_OK) {
         printf("sqlite open failed: `%s`\n", sqlite3_errmsg(admin->db));
         return false;
