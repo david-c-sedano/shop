@@ -1,5 +1,5 @@
 id,name,description,price,stock,category,display
-1,bookshelf,An artisinal piece. Made in-house by former software developer turned carpenter!,249.99,10,chairs,Book Shelf
+1,bookshelf,An artisinal piece. Made in-house by former software developer turned carpenter!,249.99,10,furniture,Book Shelf
 2,kingly_throne,A genuine replica of the throne used by King Arthur back at around 500 CE.,999999.99,3,chairs,Kingly Throne
 3,pool_table,Classic green velvet finish. Smoothly assembled by former software developers!,599.99,20,furniture,Pool Table
 4,wooden_chair,No OOP architectural principles. Only traditional Japanese joinery.,99.99,1000,chairs,Wooden Chair

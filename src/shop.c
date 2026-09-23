@@ -1,5 +1,6 @@
 
 #include "raylib.h"
+#include "rlgl.h" // RLGL_IMPLEMENTATION is not needed and causes linkage error!
 #include "raymath.h"
 #include "cimgui.h"
 #include "rlImGui.h"
@@ -117,7 +118,7 @@ void shop_render_pass(Shop* shop) {
 
     Rectangle source = { 0,0,target_w,-target_h };
     Rectangle dest = { 
-        (window_w - draw_w) * 0.5f, (window_h - draw_h) * 0.5f, 
+        (window_w - draw_w) * 0.5, (window_h - draw_h) * 0.5, 
         draw_w, draw_h
     };
     DrawTexturePro(
@@ -155,7 +156,7 @@ void screen_swap(Shop* shop, Screen target) {
     shop->transitioning = true;
     shop->fading_out = true;
     shop->transition_target = target;
-    shop->transition_alpha = 0.0f;
+    shop->transition_alpha = 0.0;
 }
 
 Vector2 mouse_pos_in_shop(Shop* shop) {
@@ -191,11 +192,83 @@ void update_carousel(float* scroll, float* target, int count, float spacing, boo
     *scroll = Lerp(*scroll, *target, 1.0 - powf(0.001, GetFrameTime()));
 }
 
+void draw_product_information_cube(Shop* shop, Item item, Vector3 pos, float alpha) {
+    float width = 5.0;
+    float height = 1.8;
+    float depth = 0.12;
+    pos.y += 2.5;
+
+    char price[64];
+    snprintf(price, sizeof(price), "$%.2f", item.price);
+    char stock[64];
+    snprintf(stock, sizeof(stock), "%d in stock", item.stock);
+
+    Vector2 mouse = mouse_pos_in_shop(shop);
+    float screen_w = shop->render_target.texture.width;
+    float screen_h = shop->render_target.texture.height;
+    float mouse_x = (mouse.x / screen_w - 0.5) * 2.0;
+    float mouse_y = (mouse.y / screen_h - 0.5) * 2.0;
+    mouse_x = Clamp(mouse_x, -1.0, 1.0);
+    mouse_y = Clamp(mouse_y, -1.0, 1.0);
+    float yaw   = mouse_x * 8.0;
+    float pitch = mouse_y * 5.0;
+    rlPushMatrix();
+        rlTranslatef(pos.x, pos.y, pos.z);
+        rlRotatef(yaw,   0.0, 1.0, 0.0);
+        rlRotatef(pitch, 1.0, 0.0, 0.0);
+        // THE PRODUCT INFORMATION CUBE
+        DrawCube(
+            (Vector3){ 0.0, 0.0, 0.0 },
+            width,
+            height,
+            depth,
+            Fade(RAYWHITE, alpha)
+        );
+        DrawCubeWires(
+            (Vector3){ 0.0, 0.0, 0.0 },
+            width,
+            height,
+            depth,
+            Fade(BLACK, alpha)
+        );
+
+        // only the *most carefully curated* of magic of numbers
+        float text_z = depth * 0.5 + 1.0;
+        DrawTextCentered3D(
+            SHOP_FONT,
+            item.display,
+            (Vector3){ 0.0, 0.55, text_z },
+            0.32, 0.015,
+            Fade(BLACK, alpha)
+        );
+        DrawTextWordWrapped3D(
+            SHOP_FONT,
+            item.description,
+            (Vector3){ 0.0, 0.10, text_z },
+            4.2, 0.16, 0.01, 0.08,
+            Fade(DARKGRAY, alpha)
+        );
+        DrawTextCentered3D(
+            SHOP_FONT,
+            price,
+            (Vector3){ -1.3, -0.50, text_z },
+            0.22, 0.01,
+            Fade(BLACK, alpha)
+        );
+        DrawTextCentered3D(
+            SHOP_FONT,
+            stock,
+            (Vector3){ 1.3, -0.50, text_z },
+            0.18, 0.008,
+            Fade(DARKGRAY, alpha)
+        );
+    rlPopMatrix();
+}
+
 void draw_carousel(Shop* shop, Item_List* items, float scroll, float spacing, float y) {
     Camera3D camera = shop->camera;
     camera.position.x = scroll;
     camera.target.x = scroll;
-    camera.target.y = y;
 
     BeginMode3D(camera);
     for (size_t i = 0; i < items->count; i++) {
@@ -206,15 +279,15 @@ void draw_carousel(Shop* shop, Item_List* items, float scroll, float spacing, fl
         }
         float item_x = i * spacing;
         float center_dist = fabsf(item_x - scroll);
-        float focus = 1.0f - Clamp(
+        float focus = 1.0 - Clamp(
             center_dist / spacing,
-            0.0f, 1.0f
+            0.0, 1.0
         );
-        float focus_scale = Lerp(0.65f, 1.15f, focus);
+        float focus_scale = Lerp(0.65, 1.15, focus);
         Vector3 pos = {
             item_x,
-            Lerp(-0.25f, 0.0f, focus),
-            Lerp(1.5f, 0.0f, focus)
+            y + Lerp(-0.25, 0.0, focus),
+            Lerp(1.5, 0.0, focus)
         };
         if (resource->is_model) {
             float spin = GetTime() * 25.0 + i * 47.0;
@@ -232,7 +305,7 @@ void draw_carousel(Shop* shop, Item_List* items, float scroll, float spacing, fl
             );
         } else {
             Rectangle source = {
-                0.0f,0.0f,
+                0.0,0.0,
                 (float)resource->texture.width,(float)resource->texture.height
             };
             float scale = resource->scale * focus_scale;
@@ -242,7 +315,7 @@ void draw_carousel(Shop* shop, Item_List* items, float scroll, float spacing, fl
                 scale * size_y
             };
             Vector2 origin = {
-                size.x * 0.5f,0
+                size.x * 0.5,0
             };
 
             DrawBillboardPro(
@@ -258,6 +331,22 @@ void draw_carousel(Shop* shop, Item_List* items, float scroll, float spacing, fl
             );
         }
     }
+
+    if (items->count > 0) {
+        int index = (int)roundf(scroll / spacing);
+        if (index < 0) {
+            index = 0;
+        }
+        if (index >= (int)items->count) {
+            index = (int)items->count - 1;
+        }
+        float item_x = index * spacing;
+        float dist = fabsf(scroll - item_x);
+        float alpha = 1.0 - Clamp(dist / (spacing * 0.35), 0.0, 1.0);
+
+        draw_product_information_cube(shop, items->items[index], (Vector3){ scroll, y, -1.0 }, alpha);
+    }
+
     EndMode3D();
 }
 
@@ -334,10 +423,10 @@ bool init_shop(Shop *shop) {
     Vector2 resolution = {(float)target.texture.width, (float)target.texture.height};
     SetShaderValue(shop->shader, resolution_loc, &resolution, SHADER_UNIFORM_VEC2);
     shop->render_target = target;
-    shop->camera.position = (Vector3){ 0.0f, 0.0, 7.0f };
-    shop->camera.target   = (Vector3){ 0.0f, 0.0, 0.0f };
-    shop->camera.up       = (Vector3){ 0.0f, 1.0f, 0.0f };
-    shop->camera.fovy     = 45.0f;
+    shop->camera.position = (Vector3){ 0.0, 0.0, 7.0 };
+    shop->camera.target   = (Vector3){ 0.0, 0.0, 0.0 };
+    shop->camera.up       = (Vector3){ 0.0, 1.0, 0.0 };
+    shop->camera.fovy     = 45.0;
     shop->camera.projection = CAMERA_PERSPECTIVE;
 
     // actual Shop setup

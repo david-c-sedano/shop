@@ -1,7 +1,7 @@
 
 // this is in 3D units
 #define HOME_FEATURED_SPACING 4.0
-#define HOME_FEATURED_Y       -0.1
+#define HOME_FEATURED_Y       0.0
 
 #define HOME_BUTTON_SPACING 300.0
 #define HOME_BUTTON_X       500.0

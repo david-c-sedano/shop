@@ -1,5 +1,5 @@
 
-#define DISPLAY_Y 1.0
+#define DISPLAY_Y -1.2
 #define DISPLAY_SPACING 2.0
 
 void init_shop_items(Shop* shop) {
