@@ -176,6 +176,19 @@ Vector2 mouse_pos_in_shop(Shop* shop) {
     };
 }
 
+Vector2 mouse_yaw_pitch(Shop* shop) {
+    Vector2 mouse = mouse_pos_in_shop(shop);
+    float screen_w = shop->render_target.texture.width;
+    float screen_h = shop->render_target.texture.height;
+    float mouse_x = (mouse.x / screen_w - 0.5) * 2.0;
+    float mouse_y = (mouse.y / screen_h - 0.5) * 2.0;
+    mouse_x = Clamp(mouse_x, -1.0, 1.0);
+    mouse_y = Clamp(mouse_y, -1.0, 1.0);
+    float yaw   = mouse_x * 8.0;
+    float pitch = mouse_y * 5.0;
+    return (Vector2){ yaw, pitch };
+}
+
 void update_carousel(float* scroll, float* target, int count, float spacing, bool active) {
     if (active) {
         float wheel = GetMouseWheelMove();
@@ -255,6 +268,26 @@ void draw_carousel(Shop* shop, Item_List* items, float scroll, float spacing, fl
     }
 }
 
+int carousel_focused_item_index(Item_List items, float scroll, float spacing) {
+    int index = (int)roundf(scroll / spacing);
+    index = MIN(index, items.count-1);
+    return index;
+}
+
+float carousel_item_alpha(Item_List items, float scroll, float spacing) {
+    int index = carousel_focused_item_index(items, scroll, spacing);
+    if (index < 0) {
+        index = 0;
+    }
+    if (index >= (int)items.count) {
+        index = (int)items.count - 1;
+    }
+    float item_x = index * spacing;
+    float dist = fabsf(scroll - item_x);
+    float alpha = 1.0 - Clamp(dist / (spacing * 0.35), 0.0, 1.0);
+    return alpha;
+}
+
 // NOTE!!
 // the sql must be some form of `"SELECT " ITEM_COLUMNS " FROM items "`
 // or else BAD THINGS WILL HAPPEN!!!
@@ -294,6 +327,184 @@ void reset_item_list(Item_List* list) {
     list->items = NULL;
     list->count = 0;
     list->capacity = 0;
+}
+
+/*  REUSABLE UI "COMPONENTS" 
+    each screen has to call these accordingly in `update`, `draw`, w/e
+*/
+Rectangle back_button_bounds(Shop* shop) {
+    float screen_h = shop->render_target.texture.height;
+    return (Rectangle){
+        24.0, screen_h - 100.0, 120.0, 80.0
+    };
+}
+
+void back_button_event(Shop* shop) {
+    Rectangle back = back_button_bounds(shop);
+    Vector2 mouse = mouse_pos_in_shop(shop);
+    if (CheckCollisionPointRec(mouse, back) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+        screen_swap(shop, HOME_SCREEN);
+    }
+}
+
+void draw_back_button(Shop* shop) {
+    Rectangle back = back_button_bounds(shop);
+    Vector2 mouse = mouse_pos_in_shop(shop);
+    bool hovered = CheckCollisionPointRec(mouse, back);
+    
+    float darken = IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? -0.8 : -0.5;
+    DrawRectangleRounded(back, 0.2, 8, 
+        hovered ? ColorBrightness(SHOP_GREEN, darken) : SHOP_GREEN
+    );
+
+    const char* label = "< HOME";
+    int font_size = 20;
+    int label_w = MeasureText(label, font_size);
+    DrawText(
+        label,
+        back.x + (back.width - label_w) * 0.5f,
+        back.y + (back.height - font_size) * 0.5f,
+        font_size,
+        BLACK
+    );
+}
+
+/* SEARCH BAR */
+Rectangle advanced_search_button_bounds(Shop* shop) {
+    float screen_w = shop->render_target.texture.width;
+    return (Rectangle){ screen_w - 24.0 - 80.0, 24.0, 80.0, 60.0 };
+}
+
+Rectangle search_bar_bounds(Shop* shop) {
+    Rectangle advanced = advanced_search_button_bounds(shop);
+    return (Rectangle){ advanced.x - 8.0 - 450.0, 24.0, 450.0, 60.0 };
+}
+
+void advanced_search_button_event(Shop* shop) {
+    Rectangle bounds = back_button_bounds(shop);
+    Vector2 mouse = mouse_pos_in_shop(shop);
+    if (CheckCollisionPointRec(mouse, bounds) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+        // TODO: imgui panel
+    }
+}
+
+void draw_advanced_search_button(Shop* shop) {
+    Rectangle bounds = advanced_search_button_bounds(shop);
+    Vector2 mouse = mouse_pos_in_shop(shop);
+    bool hovered = CheckCollisionPointRec(mouse, bounds);
+    
+    float darken = IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? -0.8 : -0.5;
+    DrawRectangleRounded(bounds, 0.2, 8, 
+        hovered ? ColorBrightness(SHOP_BLUE, darken) : SHOP_BLUE
+    );
+
+    const char* label = "Adv.";
+    int font_size = 20;
+    int label_w = MeasureText(label, font_size);
+    DrawText(
+        label,
+        bounds.x + (bounds.width - label_w) * 0.5f,
+        bounds.y + (bounds.height - font_size) * 0.5f,
+        font_size,
+        BLACK
+    );
+}
+
+void search_bar_event(Shop* shop) {
+    Rectangle bar = search_bar_bounds(shop);
+    Vector2 mouse = mouse_pos_in_shop(shop);
+
+    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+        shop->search_bar_active = CheckCollisionPointRec(mouse, bar);
+    }
+    if (!shop->search_bar_active) {
+        return;
+    }
+
+    int c = GetCharPressed();
+    while (c > 0) {
+        if (c >= 32 && c <= 126) {
+            size_t len = strlen(shop->search_bar);
+            if (len + 1 < sizeof(shop->search_bar)) {
+                shop->search_bar[len] = (char)c;
+                shop->search_bar[len + 1] = '\0';
+            }
+        }
+        c = GetCharPressed();
+    }
+
+    if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
+        size_t len = strlen(shop->search_bar);
+        if (len > 0) {
+            shop->search_bar[len - 1] = '\0';
+        }
+    }
+}
+
+void draw_search_bar(Shop* shop) {
+    draw_advanced_search_button(shop);
+
+    Rectangle bar = search_bar_bounds(shop);
+    Vector2 mouse = mouse_pos_in_shop(shop);
+    bool hovered = CheckCollisionPointRec(mouse, bar);
+    Color outline = SHOP_SHADOW;
+    if (shop->search_bar_active) {
+        outline = SHOP_GREEN;
+    } else if (hovered) {
+        outline = ColorBrightness(SHOP_GREEN, -0.25);
+    }
+    DrawRectangleRounded(bar, 0.25, 8, outline);
+
+    float padding = 16.0;
+    float cursor_padding = 4.0;
+    float font_size = 24.0;
+    float spacing = 1.0;
+    float cursor_width = 2.0;
+
+    Rectangle text_area = { bar.x + padding, bar.y, bar.width - padding * 2.0, bar.height };
+    Vector2 text_size = MeasureTextEx(SHOP_FONT, shop->search_bar, font_size, spacing);
+    float overflow = text_size.x + cursor_padding - text_area.width;
+    float text_offset = 0.0;
+    if (overflow > 0.0) {
+        text_offset = overflow;
+    }
+    float text_x = text_area.x - text_offset;
+    float text_y = bar.y + (bar.height - font_size) * 0.5 - 2.0;
+    BeginScissorMode(
+        (int)text_area.x, (int)text_area.y, 
+        (int)text_area.width, (int)text_area.height
+    );
+    if (shop->search_bar[0] != '\0') {
+        DrawTextEx(
+            SHOP_FONT,
+            shop->search_bar,
+            (Vector2){ text_x, text_y },
+            font_size,
+            spacing,
+            SHOP_INK
+        );
+    } else if (!shop->search_bar_active) {
+        DrawTextEx(
+            SHOP_FONT,
+            "Search...",
+            (Vector2){ text_x, text_y },
+            font_size,
+            spacing,
+            Fade(SHOP_INK, 0.5)
+        );
+    }
+    EndScissorMode();
+
+    if (shop->search_bar_active) {
+        float cursor_x = text_x + text_size.x + cursor_padding;
+        if (fmod(GetTime(), 1.0) < 0.5) {
+            DrawRectangle(
+                (int)cursor_x, (int)(bar.y + 14.0f),
+                cursor_width,(int)(bar.height - 28.0f),
+                SHOP_INK
+            );
+        }
+    }
 }
 
 bool init_shop(Shop *shop) {
@@ -350,7 +561,7 @@ bool init_shop(Shop *shop) {
             "'kingly_throne'"
         ") "
         "ORDER BY CASE name "
-            "WHEN 'wooden_chair'   THEN 0 "
+            "WHEN 'wooden_chair'  THEN 0 "
             "WHEN 'caveman_chair' THEN 1 "
             "WHEN 'the_batmobile' THEN 2 "
             "WHEN 'lawn_chair'    THEN 3 "

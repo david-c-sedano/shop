@@ -112,6 +112,8 @@ typedef struct Shop {
     Admin_Panel admin;
     Item_Resource_Table item_resources;
     bool paused;
+    char search_bar[100];
+    bool search_bar_active;
 
     // HOME
     Home_Button* home_buttons;
@@ -142,14 +144,28 @@ void shop_render_pass(Shop* shop);
 void ui_render_pass(Shop* shop);
 void screen_swap(Shop* shop, Screen screen);
 Vector2 mouse_pos_in_shop(Shop* shop);
+Vector2 mouse_yaw_pitch(Shop* shop);
 void update_carousel(float* scroll, float* target, int count, float spacing, bool active);
 void draw_carousel(Shop* shop, Item_List* items, float scroll, float spacing, float y);
+int carousel_focused_item_index(Item_List items, float scroll, float spacing);
+float carousel_item_alpha(Item_List items, float scroll, float spacing);
 Item_List query_items(Shop* shop, char* sql);
 void reset_item_list(Item_List* list);
+
+// Back Button just returns to `HOME_SCREEN`
+Rectangle back_button_bounds(Shop* shop);
+void back_button_event(Shop* shop);
+void draw_back_button(Shop* shop);
+
+Rectangle search_bar_bounds(Shop* shop);
+void search_bar_event(Shop* shop);
+void draw_search_bar(Shop* shop);
 
 bool init_shop(Shop *shop);
 void update_shop(Shop *shop);
 void draw_shop(Shop *shop);
+
+
 
 #define ITEM_ID_COLUMN       0
 #define ITEM_NAME_COLUMN     1
@@ -160,5 +176,8 @@ void draw_shop(Shop *shop);
 #define ITEM_DISPLAY_COLUMN  6
 
 #define ITEM_COLUMNS "id, name, description, price, stock, category, display"
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #endif

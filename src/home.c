@@ -32,8 +32,9 @@ Rectangle home_button_rect(Shop* shop, int index) {
 }
 
 void update_home(Shop* shop) {
-    Vector2 mouse = mouse_pos_in_shop(shop);
+    search_bar_event(shop);
 
+    Vector2 mouse = mouse_pos_in_shop(shop);
     bool top_active = mouse.y < 500;
     update_carousel(
         &shop->top_row_scroll, &shop->top_row_scroll_target,
@@ -103,15 +104,10 @@ void draw_featured_tag(Shop* shop, Item item, Vector3 pos, float alpha) {
     float depth = 0.12;
     pos.y += 2.3;
 
-    Vector2 mouse = mouse_pos_in_shop(shop);
-    float screen_w = shop->render_target.texture.width;
-    float screen_h = shop->render_target.texture.height;
-    float mouse_x = (mouse.x / screen_w - 0.5) * 2.0;
-    float mouse_y = (mouse.y / screen_h - 0.5) * 2.0;
-    mouse_x = Clamp(mouse_x, -1.0, 1.0);
-    mouse_y = Clamp(mouse_y, -1.0, 1.0);
-    float yaw   = mouse_x * 8.0;
-    float pitch = mouse_y * 5.0;
+    Vector2 yaw_pitch = mouse_yaw_pitch(shop);
+    float yaw = yaw_pitch.x;
+    float pitch = yaw_pitch.y;
+
     rlPushMatrix();
     rlTranslatef(pos.x, pos.y, pos.z);
     rlRotatef(yaw,   0.0, 1.0, 0.0);
@@ -150,6 +146,9 @@ void draw_featured_tag(Shop* shop, Item item, Vector3 pos, float alpha) {
 }
 
 void draw_home(Shop* shop) {
+    // search bar
+    draw_search_bar(shop);
+
     Camera3D camera = shop->camera;
     camera.position.x = shop->top_row_scroll;
     camera.target.x = shop->top_row_scroll;
@@ -163,22 +162,13 @@ void draw_home(Shop* shop) {
         HOME_FEATURED_Y
     );
 
-    int index = (int)roundf(shop->top_row_scroll / HOME_FEATURED_SPACING);
-    if (index < 0) {
-        index = 0;
-    }
-    if (index >= (int)shop->featured.count) {
-        index = (int)shop->featured.count - 1;
-    }
-    float item_x = index * HOME_FEATURED_SPACING;
-    float dist = fabsf(shop->top_row_scroll - item_x);
-    float alpha = 1.0 - Clamp(dist / (HOME_FEATURED_SPACING * 0.35), 0.0, 1.0);
+    int index = carousel_focused_item_index(shop->featured, shop->top_row_scroll, HOME_FEATURED_SPACING);
     if (shop->featured.count > 0) {
         draw_featured_tag(
             shop, 
             shop->featured.items[index],
             (Vector3){ shop->top_row_scroll, HOME_FEATURED_Y, -1.0 },
-            alpha
+            carousel_item_alpha(shop->featured, shop->top_row_scroll, HOME_FEATURED_SPACING)
         );
     }
     EndMode3D();
