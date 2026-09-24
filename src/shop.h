@@ -121,7 +121,7 @@ typedef struct Shop {
     float bottom_row_scroll, bottom_row_scroll_target;
 
     // DISPLAY
-    Item_List display_items;
+    Item_List display;
     float scroll, scroll_target;
 
     // CORE

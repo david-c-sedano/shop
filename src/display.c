@@ -10,22 +10,117 @@ void init_shop_items(Shop* shop) {
     shop->camera.projection = CAMERA_PERSPECTIVE;
 }
 
+void draw_product_information_cube(Shop* shop, Item item, Vector3 pos, float alpha) {
+    float width = 5.0;
+    float height = 1.8;
+    float depth = 0.12;
+    pos.y += 2.5;
+
+    char price[64];
+    snprintf(price, sizeof(price), "$%.2f", item.price);
+    char stock[64];
+    snprintf(stock, sizeof(stock), "%d in stock", item.stock);
+
+    Vector2 mouse = mouse_pos_in_shop(shop);
+    float screen_w = shop->render_target.texture.width;
+    float screen_h = shop->render_target.texture.height;
+    float mouse_x = (mouse.x / screen_w - 0.5) * 2.0;
+    float mouse_y = (mouse.y / screen_h - 0.5) * 2.0;
+    mouse_x = Clamp(mouse_x, -1.0, 1.0);
+    mouse_y = Clamp(mouse_y, -1.0, 1.0);
+    float yaw   = mouse_x * 8.0;
+    float pitch = mouse_y * 5.0;
+    rlPushMatrix();
+    rlTranslatef(pos.x, pos.y, pos.z);
+    rlRotatef(yaw,   0.0, 1.0, 0.0);
+    rlRotatef(pitch, 1.0, 0.0, 0.0);
+        // THE PRODUCT INFORMATION CUBE
+        DrawCube(
+            (Vector3){ 0.0, 0.0, 0.0 },
+            width,
+            height,
+            depth,
+            Fade(RAYWHITE, alpha)
+        );
+        DrawCubeWires(
+            (Vector3){ 0.0, 0.0, 0.0 },
+            width,
+            height,
+            depth,
+            Fade(BLACK, alpha)
+        );
+
+        // only the *most carefully curated* of magic of numbers
+        float text_z = depth * 0.5 + 1.0;
+        DrawTextCentered3D(
+            SHOP_FONT,
+            item.display,
+            (Vector3){ 0.0, 0.55, text_z },
+            0.32, 0.015,
+            Fade(BLACK, alpha)
+        );
+        DrawTextWordWrapped3D(
+            SHOP_FONT,
+            item.description,
+            (Vector3){ 0.0, 0.10, text_z },
+            4.2, 0.16, 0.01, 0.08,
+            Fade(DARKGRAY, alpha)
+        );
+        DrawTextCentered3D(
+            SHOP_FONT,
+            price,
+            (Vector3){ -1.3, -0.50, text_z },
+            0.22, 0.01,
+            Fade(BLACK, alpha)
+        );
+        DrawTextCentered3D(
+            SHOP_FONT,
+            stock,
+            (Vector3){ 1.3, -0.50, text_z },
+            0.18, 0.008,
+            Fade(DARKGRAY, alpha)
+        );
+    rlPopMatrix();
+}
+
 void update_display(Shop* shop) {
     update_carousel(
         &shop->scroll,
         &shop->scroll_target,
-        shop->display_items.count,
+        shop->display.count,
         DISPLAY_SPACING,
         true
     );
 }
 
 void draw_display(Shop* shop) {
+    Camera3D camera = shop->camera;
+    camera.position.x = shop->scroll;
+    camera.target.x = shop->scroll;
+    BeginMode3D(camera);
+
     draw_carousel(
         shop,
-        &shop->display_items,
+        &shop->display,
         shop->scroll,
         DISPLAY_SPACING,
         DISPLAY_Y
     );
+
+    int index = (int)roundf(shop->scroll / DISPLAY_SPACING);
+    if (index < 0) {
+        index = 0;
+    }
+    if (index >= (int)shop->display.count) {
+        index = (int)shop->display.count - 1;
+    }
+    float item_x = index * DISPLAY_SPACING;
+    float dist = fabsf(shop->scroll - item_x);
+    float alpha = 1.0 - Clamp(dist / (DISPLAY_SPACING * 0.35), 0.0, 1.0);
+    if (shop->display.count > 0) {
+        draw_product_information_cube(
+            shop, shop->display.items[index], (Vector3){ shop->scroll, DISPLAY_Y, -1.0 }, alpha
+        );
+    }
+    EndMode3D();
 }
