@@ -83,6 +83,13 @@ void draw_product_information_cube(Shop* shop, Item item, Vector3 pos, float alp
     rlPopMatrix();
 }
 
+static Rectangle back_button_bounds(Shop* shop) {
+    float screen_h = shop->render_target.texture.height;
+    return (Rectangle){
+        24.0, screen_h - 100.0, 120.0, 80.0
+    };
+}
+
 void update_display(Shop* shop) {
     update_carousel(
         &shop->scroll,
@@ -90,6 +97,33 @@ void update_display(Shop* shop) {
         shop->display.count,
         DISPLAY_SPACING,
         true
+    );
+    Rectangle back = back_button_bounds(shop);
+    Vector2 mouse = mouse_pos_in_shop(shop);
+    if (CheckCollisionPointRec(mouse, back) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+        screen_swap(shop, HOME_SCREEN);
+    }
+}
+
+void draw_back_button(Shop* shop) {
+    Rectangle back = back_button_bounds(shop);
+    Vector2 mouse = mouse_pos_in_shop(shop);
+    bool hovered = CheckCollisionPointRec(mouse, back);
+    
+    float darken = IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? -0.8 : -0.5;
+    DrawRectangleRounded(back, 0.2, 8, 
+        hovered ? ColorBrightness(SHOP_GREEN, darken) : SHOP_GREEN
+    );
+
+    const char* label = "< HOME";
+    int font_size = 20;
+    int label_w = MeasureText(label, font_size);
+    DrawText(
+        label,
+        back.x + (back.width - label_w) * 0.5f,
+        back.y + (back.height - font_size) * 0.5f,
+        font_size,
+        BLACK
     );
 }
 
@@ -123,4 +157,6 @@ void draw_display(Shop* shop) {
         );
     }
     EndMode3D();
+
+    draw_back_button(shop);
 }
