@@ -382,7 +382,11 @@ void admin_load_csv_popup(Admin_Panel* admin) {
 }
 
 void admin_panel(Admin_Panel* admin) {
-    ImGui_SetNextWindowSizeConstraints((ImVec2){400.0,500.0}, (ImVec2){FLT_MAX, FLT_MAX}, NULL,NULL);
+    ImGui_SetNextWindowSizeConstraints(
+        (ImVec2){400.0,500.0}, 
+        (ImVec2){FLT_MAX, FLT_MAX}, 
+        NULL,NULL
+    );
     ImGui_Begin("Admin", NULL, ImGuiWindowFlags_NoScrollbar);
 
     ImVec2 avail = ImGui_GetContentRegionAvail();

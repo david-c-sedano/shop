@@ -29,21 +29,22 @@ Font SHOP_FONT;
 
 // textures
 Texture2D LOGO;
+Texture2D MEGAMIND;
 Texture2D ACCOUNT_SETTINGS_HOME_ICON;
 Texture2D CHAIRS_HOME_ICON;
 Texture2D OTHER_FURNISHINGS_HOME_ICON;
 Texture2D LARGER_ITEMS_HOME_ICON;
-Texture2D HOME_ICON; 
+Texture2D HOME_ICON;
 
 void init_textures() {
     SHOP_FONT = LoadFont("assets/JetBrainsMono-Bold.ttf");
 
     LOGO = LoadTexture("./assets/PEAK_Software_Logo.png");
+    MEGAMIND = LoadTexture("./assets/Megamind.png");
     ACCOUNT_SETTINGS_HOME_ICON = LoadTexture("./assets/icons/account_settings_home_icon.png");
     CHAIRS_HOME_ICON = LoadTexture("./assets/icons/chairs_home_icon.png");
     OTHER_FURNISHINGS_HOME_ICON = LoadTexture("./assets/icons/other_furnishings_home_icon.png");
     LARGER_ITEMS_HOME_ICON = LoadTexture("./assets/icons/larger_items_home_icon.png");
-    HOME_ICON = LoadTexture("./assets/icons/home_icon.png");
 }
 
 Item_Resource* get_item_resource(Shop* shop, Item item) {
@@ -219,7 +220,7 @@ void DrawTextCentered3D(
         DrawText3D(
             font, 
             text, 
-            (Vector3){ -size.x * 0.5, 0.0, 0.0 },
+            (Vector3){ -size.x * 0.5, 0.0, -size.y * 0.5 },
             font_size,
             spacing,
             0.0,

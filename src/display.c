@@ -32,16 +32,12 @@ void draw_product_information_cube(Shop* shop, Item item, Vector3 pos, float alp
         // THE PRODUCT INFORMATION CUBE
         DrawCube(
             (Vector3){ 0.0, 0.0, 0.0 },
-            width,
-            height,
-            depth,
+            width,height,depth,
             Fade(RAYWHITE, alpha)
         );
         DrawCubeWires(
             (Vector3){ 0.0, 0.0, 0.0 },
-            width,
-            height,
-            depth,
+            width,height,depth,
             Fade(BLACK, alpha)
         );
 
@@ -50,7 +46,7 @@ void draw_product_information_cube(Shop* shop, Item item, Vector3 pos, float alp
         DrawTextCentered3D(
             SHOP_FONT,
             item.display,
-            (Vector3){ 0.0, 0.55, text_z },
+            (Vector3){ 0.0, 0.40, text_z },
             0.32, 0.015,
             Fade(BLACK, alpha)
         );
@@ -64,16 +60,64 @@ void draw_product_information_cube(Shop* shop, Item item, Vector3 pos, float alp
         DrawTextCentered3D(
             SHOP_FONT,
             price,
-            (Vector3){ -1.3, -0.50, text_z },
+            (Vector3){ -1.3, -0.60, text_z },
             0.22, 0.01,
             Fade(BLACK, alpha)
         );
         DrawTextCentered3D(
             SHOP_FONT,
             stock,
-            (Vector3){ 1.3, -0.50, text_z },
+            (Vector3){ 1.3, -0.60, text_z },
             0.18, 0.008,
             Fade(DARKGRAY, alpha)
+        );
+    rlPopMatrix();
+}
+
+// Yeah, I'm just pissing around at this point
+void draw_no_items(Shop* shop, Camera camera) {
+    float image_width = 3.0;
+    float image_height = image_width * ((float)MEGAMIND.height / (float)MEGAMIND.width);
+    Vector3 image_pos = { shop->scroll, DISPLAY_Y - 0.20, 0.0 };
+    Rectangle source = { 0.0,0.0, (float)MEGAMIND.width,(float)MEGAMIND.height };
+
+    DrawBillboardPro(
+        camera,
+        MEGAMIND,
+        source,
+        image_pos,
+        (Vector3){ 0.0, 1.0, 0.0 },
+        (Vector2){ image_width, image_height },
+        (Vector2){ image_width * 0.5, 0.0 },
+        0.0,
+        WHITE
+    );
+
+    Vector3 label_pos = { shop->scroll, DISPLAY_Y - 0.5, 0.5 };
+    float width = 3.0;
+    float height = 0.6;
+    float depth = 0.10;
+    Vector2 yaw_pitch = mouse_yaw_pitch(shop);
+    rlPushMatrix();
+    rlTranslatef(label_pos.x, label_pos.y, label_pos.z);
+    rlRotatef(yaw_pitch.x, 0.0, 1.0, 0.0);
+    rlRotatef(yaw_pitch.y, 1.0, 0.0, 0.0);
+        DrawCube(
+            (Vector3){ 0 },
+            width, height, depth,
+            RAYWHITE
+        );
+        DrawCubeWires(
+            (Vector3){ 0 },
+            width, height, depth,
+            BLACK
+        );
+        DrawTextCentered3D(
+            SHOP_FONT,
+            "No Items??",
+            (Vector3){ 0.0, 0.0, depth * 0.5 + 0.02 },
+            0.32, 0.015,
+            BLACK
         );
     rlPopMatrix();
 }
@@ -86,29 +130,25 @@ void update_display(Shop* shop) {
         DISPLAY_SPACING,
         true
     );
-    search_bar_event(shop);
-    back_button_event(shop);
 }
 
 void draw_display(Shop* shop) {
-    // search bar
-    draw_search_bar(shop);
-
     Camera3D camera = shop->camera;
     camera.position.x = shop->scroll;
     camera.target.x = shop->scroll;
+
     BeginMode3D(camera);
-
-    draw_carousel(
-        shop,
-        &shop->display,
-        shop->scroll,
-        DISPLAY_SPACING,
-        DISPLAY_Y
-    );
-
-    int index = carousel_focused_item_index(shop->display, shop->scroll, DISPLAY_SPACING);
-    if (shop->display.count > 0) {
+    if (shop->display.count == 0) {
+        draw_no_items(shop, camera);
+    } else {
+        draw_carousel(
+            shop,
+            &shop->display,
+            shop->scroll,
+            DISPLAY_SPACING,
+            DISPLAY_Y
+        );
+        int index = carousel_focused_item_index(shop->display, shop->scroll, DISPLAY_SPACING);
         draw_product_information_cube(
             shop, 
             shop->display.items[index], 
@@ -117,6 +157,4 @@ void draw_display(Shop* shop) {
         );
     }
     EndMode3D();
-
-    draw_back_button(shop);
 }

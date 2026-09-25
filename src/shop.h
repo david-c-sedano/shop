@@ -64,6 +64,11 @@ typedef struct {
     Arena temp;
 } Admin_Panel;
 
+typedef struct {
+    bool active;
+    // ??
+} Adv_Search_Panel;
+
 typedef enum {
     LOAD_SCREEN,
     HOME_SCREEN,
@@ -110,10 +115,13 @@ typedef Ht(int, Item_Resource) Item_Resource_Table;
 
 typedef struct Shop {
     Admin_Panel admin;
+    Adv_Search_Panel adv_search;
+
     Item_Resource_Table item_resources;
     bool paused;
     char search_bar[100];
     bool search_bar_active;
+    float search_flash;
 
     // HOME
     Home_Button* home_buttons;
@@ -149,17 +157,8 @@ void update_carousel(float* scroll, float* target, int count, float spacing, boo
 void draw_carousel(Shop* shop, Item_List* items, float scroll, float spacing, float y);
 int carousel_focused_item_index(Item_List items, float scroll, float spacing);
 float carousel_item_alpha(Item_List items, float scroll, float spacing);
-Item_List query_items(Shop* shop, char* sql);
+Item_List query_items(Shop* shop, const char* sql);
 void reset_item_list(Item_List* list);
-
-// Back Button just returns to `HOME_SCREEN`
-Rectangle back_button_bounds(Shop* shop);
-void back_button_event(Shop* shop);
-void draw_back_button(Shop* shop);
-
-Rectangle search_bar_bounds(Shop* shop);
-void search_bar_event(Shop* shop);
-void draw_search_bar(Shop* shop);
 
 bool init_shop(Shop *shop);
 void update_shop(Shop *shop);

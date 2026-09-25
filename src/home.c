@@ -32,8 +32,6 @@ Rectangle home_button_rect(Shop* shop, int index) {
 }
 
 void update_home(Shop* shop) {
-    search_bar_event(shop);
-
     Vector2 mouse = mouse_pos_in_shop(shop);
     bool top_active = mouse.y < 500;
     update_carousel(
@@ -131,14 +129,14 @@ void draw_featured_tag(Shop* shop, Item item, Vector3 pos, float alpha) {
         DrawTextCentered3D(
             SHOP_FONT, 
             "FEATURED", 
-            (Vector3){ 0.0, 0.10, text_z },
+            (Vector3){ 0.0, 0.02, text_z },
             0.16, 0.008,
             Fade(DARKGRAY, alpha)
         );
         DrawTextCentered3D(
             SHOP_FONT,
             item.display,
-            (Vector3){ 0.0, -0.18, text_z },
+            (Vector3){ 0.0, -0.33, text_z },
             0.30, 0.012, 
             Fade(BLACK, alpha)
         );
@@ -146,9 +144,6 @@ void draw_featured_tag(Shop* shop, Item item, Vector3 pos, float alpha) {
 }
 
 void draw_home(Shop* shop) {
-    // search bar
-    draw_search_bar(shop);
-
     Camera3D camera = shop->camera;
     camera.position.x = shop->top_row_scroll;
     camera.target.x = shop->top_row_scroll;
