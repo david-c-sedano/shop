@@ -13,3 +13,10 @@
 *.db
 **/lib/
 **/lib_wasm/
+
+/nob
+/nob_wasm
+/shop
+
+venv/
+.venv/
