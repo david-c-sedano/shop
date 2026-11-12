@@ -1,14 +1,14 @@
-id,name,description,price,stock,category,display
-1,bookshelf,An artisinal piece. Made in-house by former software developer turned carpenter!,249.99,10,furniture,Book Shelf
-2,kingly_throne,A genuine replica of the throne used by King Arthur back at around 500 CE.,999999.99,3,chairs,Kingly Throne
-3,pool_table,Classic green velvet finish. Smoothly assembled by former software developers!,599.99,20,furniture,Pool Table
-4,wooden_chair,No OOP architectural principles. Only traditional Japanese joinery.,99.99,1000,chairs,Wooden Chair
-5,caveman_chair,Grogbar's preferred seat. Extra price for transport as it is heavy.,999.99,24,chairs,Caveman Chair
-6,lawn_chair,A reliable and easily storable choice. Perfect for family backyard barbequing events!,0.99,999999,chairs,Lawn Chair
-7,refrigerator,A classic. Comes with a fully adjustable internal temperature!,799.99,15,furniture,Refrigerator
-8,entire_house,Didn't think we could ship an entire house to your front door? Well think again!,300000.0,3,large,An Entire House
-9,office_chair,Our most popular product. The ergonomics and quality are unmatched!,69.99,50,chairs,Office Chair
-10,the_batmobile,Our associates took out Batman before he could have any prep time. Only 1 available so order quick!,100000000.0,1,large,The Batmobile
-11,gaming_chair,Clinically proven to increase your League of Legends rank. Known to induce severe allergies to grass.,79.99,15,chairs,Gaming Chair
-12,particle_accelerator,A decent investment due to recent advancements which have proven to turn lead into gold!!,40000000000.0,2,large,Particle Accelerator
-13,toilet,Comes built-in with AI-powered bidet! Trained on petabytes worth of data to perfectly shoot water at your butthole!,99.99,10,chairs,Toilet
+id,name,description,price,stock,category,display,sale_price
+1,bookshelf,An artisinal piece. Made in-house by former software developer turned carpenter!,249.99,10,furniture,Book Shelf,
+2,kingly_throne,A genuine replica of the throne used by King Arthur back at around 500 CE.,999999.99,3,chairs,Kingly Throne,
+3,pool_table,Classic green velvet finish. Smoothly assembled by former software developers!,599.99,20,furniture,Pool Table,
+4,wooden_chair,No OOP architectural principles. Only traditional Japanese joinery.,99.99,1000,chairs,Wooden Chair,
+5,caveman_chair,Grogbar's preferred seat. Extra price for transport as it is heavy.,999.99,24,chairs,Caveman Chair,49.99
+6,lawn_chair,A reliable and easily storable choice. Perfect for family backyard barbequing events!,0.99,999999,chairs,Lawn Chair,
+7,refrigerator,A classic. Comes with a fully adjustable internal temperature!,799.99,15,furniture,Refrigerator,
+8,entire_house,Didn't think we could ship an entire house to your front door? Well think again!,300000.0,3,large,An Entire House,
+9,office_chair,Our most popular product. The ergonomics and quality are unmatched!,69.99,50,chairs,Office Chair,
+10,the_batmobile,Our associates took out Batman before he could have any prep time. Only 1 available so order quick!,100000000.0,1,large,The Batmobile,
+11,gaming_chair,Clinically proven to increase your League of Legends rank. Known to induce severe allergies to grass.,79.99,15,chairs,Gaming Chair,
+12,particle_accelerator,A decent investment due to recent advancements which have proven to turn lead into gold!!,40000000000.0,2,large,Particle Accelerator,
+13,toilet,Comes built-in with AI-powered bidet! Trained on petabytes worth of data to perfectly shoot water at your butthole!,99.99,10,chairs,Toilet,

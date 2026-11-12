@@ -16,8 +16,22 @@ void draw_product_information_cube(Shop* shop, Item item, Vector3 pos, float alp
     float depth = 0.12;
     pos.y += 2.5;
 
-    char price[64];
-    snprintf(price, sizeof(price), "$%.2f", item.price);
+    char price[128];
+    char original_price[128] = {0};
+    bool on_sale = item_is_on_sale(item);
+
+    if (on_sale) {
+        snprintf(price, sizeof(price), "ON SALE: $%.2f", item.sale_price);
+        // Show the original price and rounded percentage saved on all sale items.
+        int percent_off = item.price > 0.0f
+            ? (int)roundf((item.price - item.sale_price) * 100.0f / item.price)
+            : 0;
+        snprintf(original_price, sizeof(original_price),
+                 "Was $%.2f  (%d%% OFF)", item.price, percent_off);
+    } else {
+        format_money(price, sizeof(price), item.price);
+    }
+
     char stock[64];
     snprintf(stock, sizeof(stock), "%d in stock", item.stock);
 
@@ -60,10 +74,19 @@ void draw_product_information_cube(Shop* shop, Item item, Vector3 pos, float alp
         DrawTextCentered3D(
             SHOP_FONT,
             price,
-            (Vector3){ -1.3, -0.60, text_z },
+            (Vector3){ -1.3, on_sale ? -0.48 : -0.60, text_z },
             0.22, 0.01,
             Fade(BLACK, alpha)
         );
+        if (on_sale) {
+            DrawTextCentered3D(
+                SHOP_FONT,
+                original_price,
+                (Vector3){ -1.3, -0.76, text_z },
+                0.15, 0.008,
+                Fade(DARKGRAY, alpha)
+            );
+        }
         DrawTextCentered3D(
             SHOP_FONT,
             stock,
@@ -122,6 +145,18 @@ void draw_no_items(Shop* shop, Camera camera) {
     rlPopMatrix();
 }
 
+Rectangle add_to_cart_button_bounds(Shop* shop) {
+    float screen_w = shop->render_target.texture.width;
+    float screen_h = shop->render_target.texture.height;
+
+    return (Rectangle) {
+        screen_w / 2.0f - 100.0f,
+        screen_h - 100.0f,
+        200.0f,
+        60.0f
+    };
+}
+
 void update_display(Shop* shop) {
     update_carousel(
         &shop->scroll,
@@ -130,6 +165,21 @@ void update_display(Shop* shop) {
         DISPLAY_SPACING,
         true
     );
+
+    if(shop->display.count > 0){
+        if(button_event(shop, add_to_cart_button_bounds(shop))){
+            int index = carousel_focused_item_index(
+                shop->display,
+                shop->scroll,
+                DISPLAY_SPACING
+            );
+
+            Item item = shop->display.items[index];
+            item.stock = item_available_stock(shop, item.id);
+
+            add_to_cart(shop, item);
+        }
+    }
 }
 
 void draw_display(Shop* shop) {
@@ -149,12 +199,49 @@ void draw_display(Shop* shop) {
             DISPLAY_Y
         );
         int index = carousel_focused_item_index(shop->display, shop->scroll, DISPLAY_SPACING);
+        Item live_item = shop->display.items[index];
+        live_item.stock = item_available_stock(shop, live_item.id);
         draw_product_information_cube(
             shop, 
-            shop->display.items[index], 
+            live_item, 
             (Vector3){ shop->scroll, DISPLAY_Y, -1.0 }, 
             carousel_item_alpha(shop->display, shop->scroll, DISPLAY_SPACING)
         );
     }
     EndMode3D();
+
+    if(shop->display.count > 0){
+        int index = carousel_focused_item_index(
+            shop->display, 
+            shop->scroll, 
+            DISPLAY_SPACING
+        );
+
+        Item item = shop->display.items[index];
+        int stock = item_available_stock(shop, item.id);
+        int in_cart = 0;
+        for (int i = 0; i < shop->cart.count; i++) {
+            if (shop->cart.items[i].item.id == item.id) {
+                in_cart = shop->cart.items[i].quantity;
+                break;
+            }
+        }
+
+        if(stock > in_cart){
+            draw_button(
+                shop, 
+                add_to_cart_button_bounds(shop), 
+                "ADD TO CART", 
+                SHOP_ORANGE
+            );
+        }
+        else{
+            draw_button(
+                shop, 
+                add_to_cart_button_bounds(shop), 
+                "OUT OF STOCK", 
+                SHOP_RED
+            );
+        }
+    }
 }

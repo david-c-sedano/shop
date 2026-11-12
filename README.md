@@ -34,6 +34,3 @@ C/C++ (because Jai isn't out yet!!)
 WASM (the only hope for web development)
 ```
 Everything is vendored and built into the binary. This makes dependency hell and your 3GB `node_modules` folder impossible.
-
-# BACKEND
-For now this is a TODO. The main limitation so far is that the database will be per-machine. My intent is to just host it via github pages and be done with it, but maybe a proper persistant database and cloud infrastructure will be worth it. (Honestly just get a raspberry PI, and host everything there).

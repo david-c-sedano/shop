@@ -10,7 +10,6 @@
 *.pyc
 *.wasm
 *.data
-*.db
 **/lib/
 **/lib_wasm/
 

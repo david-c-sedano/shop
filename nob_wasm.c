@@ -1,14 +1,12 @@
+
 #include "stdio.h"
 
 #define NOB_IMPLEMENTATION
 #include "nob.h"
 
-// Added __linux__ support and a fallback
 #if defined(_WIN32)
 #define PYTHON "python"
-#elif defined(__APPLE__) || defined(__linux__)
-#define PYTHON "python3"
-#else
+#elif defined(__APPLE__)
 #define PYTHON "python3"
 #endif
 
@@ -23,8 +21,6 @@ int main(int argc, char **argv) {
             printf("\n\nfailed to build raylib for WASM!\n");
             return 1;
         }
-        cmd.count = 0; // Reset command array for the next run
-        
         nob_set_current_dir("../..");
         nob_mkdir_if_not_exists("./raylib/lib_wasm");
         nob_rename("./raylib/src/libraylib.web.a", "./raylib/lib_wasm/libraylib.a");
@@ -43,7 +39,6 @@ int main(int argc, char **argv) {
             printf("\n\nfailed to generate C API for ImGUI!\n");
             return 1;
         }
-        cmd.count = 0; // Reset command array
     }
 
     // compile ImGUI and the rendering backend
@@ -61,7 +56,6 @@ int main(int argc, char **argv) {
             printf("\n\nfailed to compile ImGUI for WASM!\n");
             return 1;
         }
-        cmd.count = 0; // Reset command array
 
         nob_cmd_append(&cmd,  
             "em++",
@@ -75,7 +69,6 @@ int main(int argc, char **argv) {
             printf("\n\nfailed to compile ImGUI Raylib Backend for WASM!\n");
             return 1;
         }
-        cmd.count = 0; // Reset command array
     }
 
     nob_cmd_append(&cmd,
@@ -103,11 +96,8 @@ int main(int argc, char **argv) {
         printf("\n\nfailed to build `shop.js` and `shop.wasm`!!\n");
         return 1;
     }
-    cmd.count = 0; 
 
-    printf("\n\n\nuse: `%s -m http.server 8000`\n", PYTHON);
+    printf("\n\n\nuse: `python -m http.server 8000`\n");
     printf("then open browser and goto: localhost:8000/shop.html\n");
     //done
-    
-    return 0;
 }

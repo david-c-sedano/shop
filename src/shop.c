@@ -28,9 +28,18 @@
 #include "assets.c"
 #include "shaders.c"
 #include "home.c"
+#include "money.c"
+#include "cart.c"
+#include "cart_badge.c"
+#include "discount.c"
+#include "order_save.c"
+#include "checkout.c"
 #include "display.c"
 #include "admin.c"
 #include "adv_search.c"
+#include "cart_save.c"
+#include "purchases.c"
+#include "account.c"
 #include "web_clipboard.c"
 
 int main(int argc, char* argv[]) {
@@ -82,6 +91,9 @@ int main(int argc, char* argv[]) {
 		EndDrawing();
 	}
 
+    if (shop.account.logged_in) {
+        cart_save(&shop);
+    }
     sqlite3_close(shop.admin.db);
     arena_free(&shop.admin.current_ed->alloc);
     rlImGuiShutdown();
@@ -147,6 +159,9 @@ void ui_render_pass(Shop* shop) {
     }
     if (shop->adv_search.active) {
         adv_search_panel(shop, &shop->adv_search);
+    }
+    if (shop->screen == ACCOUNT_SCREEN && !shop->admin.active && !shop->adv_search.active) {
+        account_panel(shop);
     }
     rlImGuiEnd();
 }
@@ -302,13 +317,19 @@ Item_List query_items(Shop* shop, const char* sql) {
     for (int y=0; y<result.height; y++) {
         Item item = {0};
         item.id = atoi(CELL(&result, 0, y));
+
         snprintf(item.name, sizeof(item.name), "%s", 
             CELL(&result, ITEM_NAME_COLUMN, y)
         );
+
         snprintf(item.description, sizeof(item.description), "%s", 
             CELL(&result, ITEM_DESC_COLUMN, y)
         );
+
         item.price = strtof(CELL(&result, ITEM_PRICE_COLUMN, y), NULL);
+        const char *sale = CELL(&result, ITEM_SALE_PRICE_COLUMN, y);
+
+        item.sale_price = sale ? strtof(sale, NULL) : 0.0f;
         item.stock = atoi(CELL(&result, ITEM_STOCK_COLUMN, y));
         snprintf(item.category, sizeof(item.category), "%s", 
             CELL(&result, ITEM_CATEGORY_COLUMN, y)
@@ -480,6 +501,15 @@ void draw_search_bar(Shop* shop) {
     }
 }
 
+Rectangle cart_button_bounds(Shop* shop){
+    return (Rectangle) {
+        24.0f, 
+        24.0f, 
+        120.0f, 
+        60.0f
+    };
+}
+
 bool init_shop(Shop *shop) {
     // Admin UI Setup
     Admin_Panel* admin = &shop->admin;
@@ -487,45 +517,74 @@ bool init_shop(Shop *shop) {
     init_text_ed(ed);
     init_admin_panel(admin, ed);
 
-    // Database setup
-    int rc = sqlite3_open(":memory:", &admin->db); // NO PERSISTANT DB FOR NOW!!
-    if (rc != SQLITE_OK) {
+    // Uses a local SQLite file on desktop so account data stays saved between runs.
+#ifdef PLATFORM_WEB
+    int database_result = sqlite3_open(":memory:", &admin->db);
+#else
+    int database_result = sqlite3_open("shop.db", &admin->db);
+#endif
+    if (database_result != SQLITE_OK) {
         printf("sqlite open failed: `%s`\n", sqlite3_errmsg(admin->db));
         return false;
     }
-    // load `csv`s
-    char path[] = "assets/csv/items.csv"; 
-    SQL_Result csv = admin_load_csv(admin, path);
-    if (csv.error) {
-        printf("admin_load_csv failed: `%s`\n", csv.error);
+
+    // Imports the product CSV only when the items table does not already exist.
+    sqlite3_stmt* item_table_check = NULL;
+    bool item_table_exists = false;
+    const char* item_table_query =
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='items' LIMIT 1;";
+
+    if (sqlite3_prepare_v2(admin->db, item_table_query, -1, &item_table_check, NULL) == SQLITE_OK) {
+        item_table_exists = sqlite3_step(item_table_check) == SQLITE_ROW;
+    }
+    sqlite3_finalize(item_table_check);
+
+    if (!item_table_exists) {
+        char item_csv_path[] = "assets/csv/items.csv";
+        SQL_Result csv_result = admin_load_csv(admin, item_csv_path);
+        if (csv_result.error) {
+            printf("admin_load_csv failed: `%s`\n", csv_result.error);
+            return false;
+        }
+
+        SQL_Result typed_result = sql_run(admin,
+            "CREATE TABLE items_typed ("
+                "id INTEGER PRIMARY KEY,"
+                "name TEXT NOT NULL,"
+                "description TEXT NOT NULL,"
+                "price REAL NOT NULL CHECK(price >= 0),"
+                "stock INTEGER NOT NULL CHECK(stock >= 0),"
+                "category TEXT NOT NULL,"
+                "display TEXT NOT NULL,"
+                "sale_price REAL NOT NULL CHECK(sale_price >= 0)"
+            ");"
+            "INSERT INTO items_typed "
+            "SELECT CAST(id AS INTEGER), name, description, CAST(price AS REAL), "
+                   "CAST(stock AS INTEGER), category, display, cast(sale_price AS REAL) FROM items;"
+            "DROP TABLE items;"
+            "ALTER TABLE items_typed RENAME TO items;"
+        );
+
+        if (typed_result.error) {
+            printf("csv type coerce failed: `%s`\n", typed_result.error);
+            return false;
+        }
+    }
+
+    if (!auth_init(shop)) {
+        printf("failed to initialize account database table\n");
         return false;
     }
-    // convert according to schema convention
-    SQL_Result typed = sql_run(admin,
-        "CREATE TABLE items_typed ("
-            "id INTEGER PRIMARY KEY,"
-            "name TEXT NOT NULL,"
-            "description TEXT NOT NULL,"
-            "price REAL NOT NULL CHECK(price >= 0),"
-            "stock INTEGER NOT NULL CHECK(stock >= 0),"
-            "category TEXT NOT NULL,"
-            "display TEXT NOT NULL"
-        ");"
-        "INSERT INTO items_typed "
-        "SELECT "
-            "CAST(id AS INTEGER),"
-            "name,"
-            "description,"
-            "CAST(price AS REAL),"
-            "CAST(stock AS INTEGER),"
-            "category,"
-            "display "
-        "FROM items;"
-        "DROP TABLE items;"
-        "ALTER TABLE items_typed RENAME to items;"
-    );
-    if (typed.error) {
-        printf("csv type coerce failed: `%s`\n", typed.error);
+    if (!cart_save_init(shop)) {
+        printf("failed to initialize saved cart database table\n");
+        return false;
+    }
+    if (!discount_init(shop)) {
+        printf("failed to initialize discount database table\n");
+        return false;
+    }
+    if (!order_save_init(shop)) {
+        printf("failed to initialize order database tables\n");
         return false;
     }
     schema_list_refresh(admin);
@@ -625,6 +684,13 @@ void update_shop(Shop *shop) {
         if (button_event(shop, advanced_search_button_bounds(shop))) {
             shop->adv_search.active = true;
         }
+        if (button_event(shop, cart_button_bounds(shop))) {
+            screen_swap(shop, CART_SCREEN);
+        }
+        break;
+
+    case ACCOUNT_SCREEN:
+        update_account(shop);
         break;
 
     case DISPLAY_SCREEN:
@@ -649,8 +715,22 @@ void update_shop(Shop *shop) {
         if (button_event(shop, advanced_search_button_bounds(shop))) {
             shop->adv_search.active = true;
         }
+        if(button_event(shop, cart_button_bounds(shop))){
+            screen_swap(shop, CART_SCREEN);
+        }
+        break;
+
+    case CART_SCREEN:
+        update_cart(shop);
+        update_checkout_button(shop);
+        break;
+
+    case CHECKOUT_SCREEN:
+        update_checkout(shop);
         break;
     }
+
+    cart_save_if_changed(shop);
 }
 
 void draw_shop(Shop *shop) {
@@ -704,6 +784,12 @@ void draw_shop(Shop *shop) {
         draw_home(shop);
         draw_search_bar(shop);
         draw_button(shop, advanced_search_button_bounds(shop), "Adv.", SHOP_BLUE);
+        draw_cart_button_with_count(shop);
+        break;
+
+    case ACCOUNT_SCREEN:
+        ClearBackground(SHOP_BG);
+        draw_account(shop);
         break;
 
     case DISPLAY_SCREEN:
@@ -712,6 +798,18 @@ void draw_shop(Shop *shop) {
         draw_search_bar(shop);
         draw_button(shop, advanced_search_button_bounds(shop), "Adv.", SHOP_BLUE);
         draw_button(shop, back_button_bounds(shop), "< HOME", SHOP_GREEN);
+        draw_cart_button_with_count(shop);
+        break;
+
+    case CART_SCREEN:
+        ClearBackground(SHOP_BG);
+        draw_cart(shop);
+        draw_checkout_button(shop);
+        break;
+
+    case CHECKOUT_SCREEN:
+        ClearBackground(SHOP_BG);
+        draw_checkout(shop);
         break;
     }
 

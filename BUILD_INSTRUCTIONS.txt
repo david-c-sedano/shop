@@ -1,0 +1,17 @@
+Chair Shop - Updated Source (November 11, 2026)
+
+This package includes the updated shopping, cart, checkout, stock management, and discount coupon source code.
+
+IMPORTANT: A newly compiled Windows shop.exe is NOT included.
+The Windows MinGW compiler was unavailable in the build environment.
+The C application source passed a GCC syntax-only check.
+
+Windows build steps:
+1. Extract this ZIP.
+2. Double-click build_and_run.bat from the shop folder.
+3. The script expects MinGW at C:\ProgramData\mingw64\mingw64\bin.
+   If your MinGW is elsewhere, edit MINGW_BIN near the top of build_and_run.bat.
+4. After a successful build, shop.exe is created and started.
+
+Keep shop.db to preserve your existing inventory and coupon database.
+The source uses INSERT OR IGNORE for starter coupons, so existing coupon records aren't overwritten.
