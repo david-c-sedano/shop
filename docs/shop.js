@@ -76,7 +76,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: C:\Users\bajoding\AppData\Local\Temp\tmpitgjbxxb.js
+// include: C:\Users\bajoding\AppData\Local\Temp\tmpv4od1vbc.js
 
   if (!Module['expectedDataFileDownloads']) Module['expectedDataFileDownloads'] = 0;
   Module['expectedDataFileDownloads']++;
@@ -203,25 +203,25 @@ Module['FS_createPath']("/assets", "items", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/assets/JetBrainsMono-Bold.ttf", "start": 0, "end": 277828}, {"filename": "/assets/Megamind.png", "start": 277828, "end": 456287}, {"filename": "/assets/PEAK_Software_Logo.png", "start": 456287, "end": 2018853}, {"filename": "/assets/csv/items.csv", "start": 2018853, "end": 2020630}, {"filename": "/assets/icons/account_settings_home_icon.png", "start": 2020630, "end": 3105093}, {"filename": "/assets/icons/chairs_home_icon.png", "start": 3105093, "end": 4597348}, {"filename": "/assets/icons/larger_items_home_icon.png", "start": 4597348, "end": 6238322}, {"filename": "/assets/icons/other_furnishings_home_icon.png", "start": 6238322, "end": 7881831}, {"filename": "/assets/items/bookshelf.glb", "start": 7881831, "end": 8136255}, {"filename": "/assets/items/caveman_chair.glb", "start": 8136255, "end": 10898803}, {"filename": "/assets/items/entire_house.glb", "start": 10898803, "end": 13296579}, {"filename": "/assets/items/gaming_chair.glb", "start": 13296579, "end": 31777579}, {"filename": "/assets/items/kingly_throne.glb", "start": 31777579, "end": 40380707}, {"filename": "/assets/items/lawn_chair.png", "start": 40380707, "end": 40715353}, {"filename": "/assets/items/office_chair.glb", "start": 40715353, "end": 48251073}, {"filename": "/assets/items/particle_accelerator.png", "start": 48251073, "end": 49456088}, {"filename": "/assets/items/pool_table.glb", "start": 49456088, "end": 50996492}, {"filename": "/assets/items/refrigerator.glb", "start": 50996492, "end": 57837552}, {"filename": "/assets/items/the_batmobile.glb", "start": 57837552, "end": 63255436}, {"filename": "/assets/items/toilet.glb", "start": 63255436, "end": 65543212}, {"filename": "/assets/items/wooden_chair.glb", "start": 65543212, "end": 70296264}], "remote_package_size": 70296264});
+    loadPackage({"files": [{"filename": "/assets/JetBrainsMono-Bold.ttf", "start": 0, "end": 277828}, {"filename": "/assets/Megamind.png", "start": 277828, "end": 456287}, {"filename": "/assets/PEAK_Software_Logo.png", "start": 456287, "end": 2018853}, {"filename": "/assets/csv/items.csv", "start": 2018853, "end": 2020630}, {"filename": "/assets/icons/account_settings_home_icon.png", "start": 2020630, "end": 3105093}, {"filename": "/assets/icons/chairs_home_icon.png", "start": 3105093, "end": 4597348}, {"filename": "/assets/icons/larger_items_home_icon.png", "start": 4597348, "end": 6238322}, {"filename": "/assets/icons/other_furnishings_home_icon.png", "start": 6238322, "end": 7881831}, {"filename": "/assets/items/bookshelf.glb", "start": 7881831, "end": 8136255}, {"filename": "/assets/items/caveman_chair.glb", "start": 8136255, "end": 10898803}, {"filename": "/assets/items/entire_house.glb", "start": 10898803, "end": 13296579}, {"filename": "/assets/items/gaming_chair.glb", "start": 13296579, "end": 31777579}, {"filename": "/assets/items/kingly_throne.glb", "start": 31777579, "end": 40380707}, {"filename": "/assets/items/lawn_chair.png", "start": 40380707, "end": 40715353}, {"filename": "/assets/items/office_chair.glb", "start": 40715353, "end": 48251073}, {"filename": "/assets/items/particle_accelerator.png", "start": 48251073, "end": 49456088}, {"filename": "/assets/items/pool_table.glb", "start": 49456088, "end": 50996492}, {"filename": "/assets/items/refrigerator.glb", "start": 50996492, "end": 57837552}, {"filename": "/assets/items/the_batmobile.glb", "start": 57837552, "end": 63255436}, {"filename": "/assets/items/toilet.glb", "start": 63255436, "end": 65543212}, {"filename": "/assets/items/wooden_chair.glb", "start": 65543212, "end": 70296264}, {"filename": "/assets/shop.db", "start": 70296264, "end": 70365896}], "remote_package_size": 70365896});
 
   })();
 
-// end include: C:\Users\bajoding\AppData\Local\Temp\tmpitgjbxxb.js
-// include: C:\Users\bajoding\AppData\Local\Temp\tmpja66dlj6.js
+// end include: C:\Users\bajoding\AppData\Local\Temp\tmpv4od1vbc.js
+// include: C:\Users\bajoding\AppData\Local\Temp\tmpv9ltn_vn.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if ((typeof ENVIRONMENT_IS_WASM_WORKER != 'undefined' && ENVIRONMENT_IS_WASM_WORKER) || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD) || (typeof ENVIRONMENT_IS_AUDIO_WORKLET != 'undefined' && ENVIRONMENT_IS_AUDIO_WORKLET)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: C:\Users\bajoding\AppData\Local\Temp\tmpja66dlj6.js
-// include: C:\Users\bajoding\AppData\Local\Temp\tmp80so0atn.js
+  // end include: C:\Users\bajoding\AppData\Local\Temp\tmpv9ltn_vn.js
+// include: C:\Users\bajoding\AppData\Local\Temp\tmpx95gvwdu.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: C:\Users\bajoding\AppData\Local\Temp\tmp80so0atn.js
+  // end include: C:\Users\bajoding\AppData\Local\Temp\tmpx95gvwdu.js
 
 
 var programArgs = [];
@@ -9884,7 +9884,7 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
   Disabled:3,
   },
   state:0,
-  StackSize:4096,
+  StackSize:65536,
   currData:null,
   handleSleepReturnValue:0,
   exportCallStack:[],
@@ -10615,50 +10615,50 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('wasmBinary');
 }
 var ASM_CONSTS = {
-  516571: ($0) => { const text = UTF8ToString($0); navigator.clipboard.writeText(text).catch(err => { console.error("clipboard write failed:", err); }); },  
- 516708: () => { if (document.fullscreenElement) return 1; },  
- 516754: () => { return Module.canvas.width; },  
- 516786: () => { return parseInt(Module.canvas.style.width); },  
- 516834: () => { document.exitFullscreen(); },  
- 516861: () => { setTimeout(function(){ Module.requestFullscreen(false, false); }, 100); },  
- 516933: () => { if (document.fullscreenElement) return 1; },  
- 516979: () => { return Module.canvas.width; },  
- 517011: () => { return screen.width; },  
- 517036: () => { document.exitFullscreen(); },  
- 517063: ($0) => { const canvasId = UTF8ToString($0); setTimeout(function() { Module.requestFullscreen(false, true); setTimeout(function() { document.querySelector(canvasId).style.width="unset"; }, 100); }, 100); },  
- 517257: () => { return window.innerWidth; },  
- 517283: () => { return window.innerHeight; },  
- 517310: () => { if (document.fullscreenElement) return 1; },  
- 517356: () => { return Module.canvas.width; },  
- 517388: () => { return parseInt(Module.canvas.style.width); },  
- 517436: () => { if (document.fullscreenElement) return 1; },  
- 517482: () => { return Module.canvas.width; },  
- 517514: () => { return screen.width; },  
- 517539: () => { return window.innerWidth; },  
- 517565: () => { return window.innerHeight; },  
- 517592: () => { if (document.fullscreenElement) return 1; },  
- 517638: () => { return Module.canvas.width; },  
- 517670: () => { return screen.width; },  
- 517695: () => { document.exitFullscreen(); },  
- 517722: () => { if (document.fullscreenElement) return 1; },  
- 517768: () => { return Module.canvas.width; },  
- 517800: () => { return parseInt(Module.canvas.style.width); },  
- 517848: () => { document.exitFullscreen(); },  
- 517875: ($0) => { Module.canvas.style.opacity = $0; },  
- 517913: () => { return screen.width; },  
- 517938: () => { return screen.height; },  
- 517964: () => { return window.screenX; },  
- 517991: () => { return window.screenY; },  
- 518018: () => { return window.devicePixelRatio; },  
- 518054: ($0) => { navigator.clipboard.writeText(UTF8ToString($0)); },  
- 518107: ($0) => { Module.canvas.style.cursor = UTF8ToString($0); },  
- 518158: () => { Module.canvas.style.cursor = 'none'; },  
- 518195: ($0, $1, $2, $3) => { try { navigator.getGamepads()[$0].vibrationActuator.playEffect('dual-rumble', { startDelay: 0, duration: $3, weakMagnitude: $1, strongMagnitude: $2 }); } catch (e) { try { navigator.getGamepads()[$0].hapticActuators[0].pulse($2, $3); } catch (e) { } } },  
- 518451: ($0) => { Module.canvas.style.cursor = UTF8ToString($0); },  
- 518502: () => { if (document.pointerLockElement) return 1; },  
- 518549: () => { if (document.fullscreenElement) return 1; },  
- 518595: () => { return window.innerWidth; },  
- 518621: () => { return window.innerHeight; }
+  516587: ($0) => { const text = UTF8ToString($0); navigator.clipboard.writeText(text).catch(err => { console.error("clipboard write failed:", err); }); },  
+ 516724: () => { if (document.fullscreenElement) return 1; },  
+ 516770: () => { return Module.canvas.width; },  
+ 516802: () => { return parseInt(Module.canvas.style.width); },  
+ 516850: () => { document.exitFullscreen(); },  
+ 516877: () => { setTimeout(function(){ Module.requestFullscreen(false, false); }, 100); },  
+ 516949: () => { if (document.fullscreenElement) return 1; },  
+ 516995: () => { return Module.canvas.width; },  
+ 517027: () => { return screen.width; },  
+ 517052: () => { document.exitFullscreen(); },  
+ 517079: ($0) => { const canvasId = UTF8ToString($0); setTimeout(function() { Module.requestFullscreen(false, true); setTimeout(function() { document.querySelector(canvasId).style.width="unset"; }, 100); }, 100); },  
+ 517273: () => { return window.innerWidth; },  
+ 517299: () => { return window.innerHeight; },  
+ 517326: () => { if (document.fullscreenElement) return 1; },  
+ 517372: () => { return Module.canvas.width; },  
+ 517404: () => { return parseInt(Module.canvas.style.width); },  
+ 517452: () => { if (document.fullscreenElement) return 1; },  
+ 517498: () => { return Module.canvas.width; },  
+ 517530: () => { return screen.width; },  
+ 517555: () => { return window.innerWidth; },  
+ 517581: () => { return window.innerHeight; },  
+ 517608: () => { if (document.fullscreenElement) return 1; },  
+ 517654: () => { return Module.canvas.width; },  
+ 517686: () => { return screen.width; },  
+ 517711: () => { document.exitFullscreen(); },  
+ 517738: () => { if (document.fullscreenElement) return 1; },  
+ 517784: () => { return Module.canvas.width; },  
+ 517816: () => { return parseInt(Module.canvas.style.width); },  
+ 517864: () => { document.exitFullscreen(); },  
+ 517891: ($0) => { Module.canvas.style.opacity = $0; },  
+ 517929: () => { return screen.width; },  
+ 517954: () => { return screen.height; },  
+ 517980: () => { return window.screenX; },  
+ 518007: () => { return window.screenY; },  
+ 518034: () => { return window.devicePixelRatio; },  
+ 518070: ($0) => { navigator.clipboard.writeText(UTF8ToString($0)); },  
+ 518123: ($0) => { Module.canvas.style.cursor = UTF8ToString($0); },  
+ 518174: () => { Module.canvas.style.cursor = 'none'; },  
+ 518211: ($0, $1, $2, $3) => { try { navigator.getGamepads()[$0].vibrationActuator.playEffect('dual-rumble', { startDelay: 0, duration: $3, weakMagnitude: $1, strongMagnitude: $2 }); } catch (e) { try { navigator.getGamepads()[$0].hapticActuators[0].pulse($2, $3); } catch (e) { } } },  
+ 518467: ($0) => { Module.canvas.style.cursor = UTF8ToString($0); },  
+ 518518: () => { if (document.pointerLockElement) return 1; },  
+ 518565: () => { if (document.fullscreenElement) return 1; },  
+ 518611: () => { return window.innerWidth; },  
+ 518637: () => { return window.innerHeight; }
 };
 function install_paste_hook() { console.log("[clipboard] installing paste hook"); window.addEventListener("paste", function(e) { console.log("[clipboard] paste event fired", e); const text = e.clipboardData.getData("text/plain"); console.log("[clipboard] text:", text); if (!text) { return; } const size = lengthBytesUTF8(text)+1; const ptr = _malloc(size); stringToUTF8(text, ptr, size); _web_paste_text(ptr); _free(ptr); e.preventDefault(); }); }
 function SetCanvasIdJs(out,outSize) { var canvasId = "#" + Module.canvas.id; stringToUTF8(canvasId, out, outSize); }

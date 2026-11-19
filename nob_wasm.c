@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
         "-L./raylib/lib_wasm",
         "-sUSE_GLFW=3",
         "-sASYNCIFY",
+        "-sASYNCIFY_STACK_SIZE=65536",
         "-sALLOW_MEMORY_GROWTH=1",
         "-lraylib",
         "-lstdc++",

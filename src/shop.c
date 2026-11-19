@@ -564,12 +564,7 @@ bool init_shop(Shop *shop) {
     init_text_ed(ed);
     init_admin_panel(admin, ed);
 
-    // Uses a local SQLite file on desktop so account data stays saved between runs.
-#ifdef PLATFORM_WEB
-    int database_result = sqlite3_open(":memory:", &admin->db);
-#else
-    int database_result = sqlite3_open("shop.db", &admin->db);
-#endif
+    int database_result = sqlite3_open("assets/shop.db", &admin->db);
     if (database_result != SQLITE_OK) {
         printf("sqlite open failed: `%s`\n", sqlite3_errmsg(admin->db));
         return false;
