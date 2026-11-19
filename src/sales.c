@@ -1002,7 +1002,21 @@ static void sales_section(Shop* shop, int tab, int status) {
         sales_error(shop,"Not enough memory to search sales.");
         return;
     }
-    filter = sqlite3_mprintf("(%z) AND (%z)",filter,search);
+
+    char* combined = sqlite3_mprintf(
+        "(%s) AND (%s)", filter, search
+    );
+
+    sqlite3_free(filter);
+    free(search);
+
+    if (!combined) {
+        sales_error(shop, "Not enough memory");
+        return;
+    }
+
+    filter = combined;
+
     char* sql = sqlite3_mprintf("SELECT count(*) FROM %s WHERE %s",from,filter);
     sqlite3_stmt* stmt = sales_prepare(shop,sql);
     sqlite3_free(sql);
