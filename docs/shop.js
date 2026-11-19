@@ -76,7 +76,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: C:\Users\bajoding\AppData\Local\Temp\tmp2h85g5sc.js
+// include: C:\Users\bajoding\AppData\Local\Temp\tmpitgjbxxb.js
 
   if (!Module['expectedDataFileDownloads']) Module['expectedDataFileDownloads'] = 0;
   Module['expectedDataFileDownloads']++;
@@ -207,21 +207,21 @@ Module['FS_createPath']("/assets", "items", true, true);
 
   })();
 
-// end include: C:\Users\bajoding\AppData\Local\Temp\tmp2h85g5sc.js
-// include: C:\Users\bajoding\AppData\Local\Temp\tmpx5v2myhx.js
+// end include: C:\Users\bajoding\AppData\Local\Temp\tmpitgjbxxb.js
+// include: C:\Users\bajoding\AppData\Local\Temp\tmpja66dlj6.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if ((typeof ENVIRONMENT_IS_WASM_WORKER != 'undefined' && ENVIRONMENT_IS_WASM_WORKER) || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD) || (typeof ENVIRONMENT_IS_AUDIO_WORKLET != 'undefined' && ENVIRONMENT_IS_AUDIO_WORKLET)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: C:\Users\bajoding\AppData\Local\Temp\tmpx5v2myhx.js
-// include: C:\Users\bajoding\AppData\Local\Temp\tmpr4yuu5p3.js
+  // end include: C:\Users\bajoding\AppData\Local\Temp\tmpja66dlj6.js
+// include: C:\Users\bajoding\AppData\Local\Temp\tmp80so0atn.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: C:\Users\bajoding\AppData\Local\Temp\tmpr4yuu5p3.js
+  // end include: C:\Users\bajoding\AppData\Local\Temp\tmp80so0atn.js
 
 
 var programArgs = [];
@@ -4341,6 +4341,29 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
   var __abort_js = () =>
       abort('native code called abort()');
 
+  
+  function __gmtime_js(time, tmPtr) {
+    time = bigintToI53Checked(time);
+  
+  
+      var date = new Date(time * 1000);
+      if (isNaN(date.getTime())) {
+        return 1;
+      }
+      HEAP32[((tmPtr)>>2)] = date.getUTCSeconds();
+      HEAP32[(((tmPtr)+(4))>>2)] = date.getUTCMinutes();
+      HEAP32[(((tmPtr)+(8))>>2)] = date.getUTCHours();
+      HEAP32[(((tmPtr)+(12))>>2)] = date.getUTCDate();
+      HEAP32[(((tmPtr)+(16))>>2)] = date.getUTCMonth();
+      HEAP32[(((tmPtr)+(20))>>2)] = date.getUTCFullYear()-1900;
+      HEAP32[(((tmPtr)+(24))>>2)] = date.getUTCDay();
+      var start = Date.UTC(date.getUTCFullYear(), 0, 1, 0, 0, 0, 0);
+      var yday = ((date.getTime() - start) / (1000 * 60 * 60 * 24))|0;
+      HEAP32[(((tmPtr)+(28))>>2)] = yday;
+      return 0;
+    ;
+  }
+
   var isLeapYear = (year) => year%4 === 0 && (year%100 !== 0 || year%400 === 0);
   
   var MONTH_DAYS_LEAP_CUMULATIVE = [0,31,60,91,121,152,182,213,244,274,305,335];
@@ -4384,6 +4407,62 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
       return 0;
     ;
   }
+
+  
+  
+  var __mktime_js = function(tmPtr) {
+  
+  var ret = (() => { 
+      var date = new Date(HEAP32[(((tmPtr)+(20))>>2)] + 1900,
+                          HEAP32[(((tmPtr)+(16))>>2)],
+                          HEAP32[(((tmPtr)+(12))>>2)],
+                          HEAP32[(((tmPtr)+(8))>>2)],
+                          HEAP32[(((tmPtr)+(4))>>2)],
+                          HEAP32[((tmPtr)>>2)],
+                          0);
+      if (isNaN(date.getTime())) {
+        return -1;
+      }
+  
+      // There's an ambiguous hour when the time goes back; the tm_isdst field is
+      // used to disambiguate it.  Date() basically guesses, so we fix it up if it
+      // guessed wrong, or fill in tm_isdst with the guess if it's -1.
+      var dst = HEAP32[(((tmPtr)+(32))>>2)];
+      var guessedOffset = date.getTimezoneOffset();
+      var start = new Date(date.getFullYear(), 0, 1);
+      var summerOffset = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
+      var winterOffset = start.getTimezoneOffset();
+      var dstOffset = Math.min(winterOffset, summerOffset); // DST is in December in South
+      if (dst < 0) {
+        // Attention: some regions don't have DST at all.
+        dst = Number(summerOffset != winterOffset && dstOffset == guessedOffset);
+      } else if ((dst > 0) != (dstOffset == guessedOffset)) {
+        var nonDstOffset = Math.max(winterOffset, summerOffset);
+        var trueOffset = dst > 0 ? dstOffset : nonDstOffset;
+        // Don't try setMinutes(date.getMinutes() + ...) -- it's messed up.
+        date.setTime(date.getTime() + (trueOffset - guessedOffset)*60000);
+        if (isNaN(date.getTime())) {
+          return -1;
+        }
+      }
+  
+      HEAP32[(((tmPtr)+(32))>>2)] = dst;
+      HEAP32[(((tmPtr)+(24))>>2)] = date.getDay();
+      var yday = ydayFromDate(date)|0;
+      HEAP32[(((tmPtr)+(28))>>2)] = yday;
+      // To match expected behavior, update fields from date
+      HEAP32[((tmPtr)>>2)] = date.getSeconds();
+      HEAP32[(((tmPtr)+(4))>>2)] = date.getMinutes();
+      HEAP32[(((tmPtr)+(8))>>2)] = date.getHours();
+      HEAP32[(((tmPtr)+(12))>>2)] = date.getDate();
+      HEAP32[(((tmPtr)+(16))>>2)] = date.getMonth();
+      HEAP32[(((tmPtr)+(20))>>2)] = date.getYear();
+  
+      // Return time in seconds
+      return date.getTime() / 1000;
+     })();
+  return BigInt(ret);
+  };
 
   
   
@@ -8025,7 +8104,11 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
 
   var _glDeleteBuffers = _emscripten_glDeleteBuffers;
 
+  var _glDeleteFramebuffers = _emscripten_glDeleteFramebuffers;
+
   var _glDeleteProgram = _emscripten_glDeleteProgram;
+
+  var _glDeleteRenderbuffers = _emscripten_glDeleteRenderbuffers;
 
   var _glDeleteShader = _emscripten_glDeleteShader;
 
@@ -8064,6 +8147,8 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
   var _glGetAttribLocation = _emscripten_glGetAttribLocation;
 
   var _glGetFloatv = _emscripten_glGetFloatv;
+
+  var _glGetFramebufferAttachmentParameteriv = _emscripten_glGetFramebufferAttachmentParameteriv;
 
   var _glGetIntegerv = _emscripten_glGetIntegerv;
 
@@ -10530,50 +10615,50 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('wasmBinary');
 }
 var ASM_CONSTS = {
-  494635: ($0) => { const text = UTF8ToString($0); navigator.clipboard.writeText(text).catch(err => { console.error("clipboard write failed:", err); }); },  
- 494772: () => { if (document.fullscreenElement) return 1; },  
- 494818: () => { return Module.canvas.width; },  
- 494850: () => { return parseInt(Module.canvas.style.width); },  
- 494898: () => { document.exitFullscreen(); },  
- 494925: () => { setTimeout(function(){ Module.requestFullscreen(false, false); }, 100); },  
- 494997: () => { if (document.fullscreenElement) return 1; },  
- 495043: () => { return Module.canvas.width; },  
- 495075: () => { return screen.width; },  
- 495100: () => { document.exitFullscreen(); },  
- 495127: ($0) => { const canvasId = UTF8ToString($0); setTimeout(function() { Module.requestFullscreen(false, true); setTimeout(function() { document.querySelector(canvasId).style.width="unset"; }, 100); }, 100); },  
- 495321: () => { return window.innerWidth; },  
- 495347: () => { return window.innerHeight; },  
- 495374: () => { if (document.fullscreenElement) return 1; },  
- 495420: () => { return Module.canvas.width; },  
- 495452: () => { return parseInt(Module.canvas.style.width); },  
- 495500: () => { if (document.fullscreenElement) return 1; },  
- 495546: () => { return Module.canvas.width; },  
- 495578: () => { return screen.width; },  
- 495603: () => { return window.innerWidth; },  
- 495629: () => { return window.innerHeight; },  
- 495656: () => { if (document.fullscreenElement) return 1; },  
- 495702: () => { return Module.canvas.width; },  
- 495734: () => { return screen.width; },  
- 495759: () => { document.exitFullscreen(); },  
- 495786: () => { if (document.fullscreenElement) return 1; },  
- 495832: () => { return Module.canvas.width; },  
- 495864: () => { return parseInt(Module.canvas.style.width); },  
- 495912: () => { document.exitFullscreen(); },  
- 495939: ($0) => { Module.canvas.style.opacity = $0; },  
- 495977: () => { return screen.width; },  
- 496002: () => { return screen.height; },  
- 496028: () => { return window.screenX; },  
- 496055: () => { return window.screenY; },  
- 496082: () => { return window.devicePixelRatio; },  
- 496118: ($0) => { navigator.clipboard.writeText(UTF8ToString($0)); },  
- 496171: ($0) => { Module.canvas.style.cursor = UTF8ToString($0); },  
- 496222: () => { Module.canvas.style.cursor = 'none'; },  
- 496259: ($0, $1, $2, $3) => { try { navigator.getGamepads()[$0].vibrationActuator.playEffect('dual-rumble', { startDelay: 0, duration: $3, weakMagnitude: $1, strongMagnitude: $2 }); } catch (e) { try { navigator.getGamepads()[$0].hapticActuators[0].pulse($2, $3); } catch (e) { } } },  
- 496515: ($0) => { Module.canvas.style.cursor = UTF8ToString($0); },  
- 496566: () => { if (document.pointerLockElement) return 1; },  
- 496613: () => { if (document.fullscreenElement) return 1; },  
- 496659: () => { return window.innerWidth; },  
- 496685: () => { return window.innerHeight; }
+  516571: ($0) => { const text = UTF8ToString($0); navigator.clipboard.writeText(text).catch(err => { console.error("clipboard write failed:", err); }); },  
+ 516708: () => { if (document.fullscreenElement) return 1; },  
+ 516754: () => { return Module.canvas.width; },  
+ 516786: () => { return parseInt(Module.canvas.style.width); },  
+ 516834: () => { document.exitFullscreen(); },  
+ 516861: () => { setTimeout(function(){ Module.requestFullscreen(false, false); }, 100); },  
+ 516933: () => { if (document.fullscreenElement) return 1; },  
+ 516979: () => { return Module.canvas.width; },  
+ 517011: () => { return screen.width; },  
+ 517036: () => { document.exitFullscreen(); },  
+ 517063: ($0) => { const canvasId = UTF8ToString($0); setTimeout(function() { Module.requestFullscreen(false, true); setTimeout(function() { document.querySelector(canvasId).style.width="unset"; }, 100); }, 100); },  
+ 517257: () => { return window.innerWidth; },  
+ 517283: () => { return window.innerHeight; },  
+ 517310: () => { if (document.fullscreenElement) return 1; },  
+ 517356: () => { return Module.canvas.width; },  
+ 517388: () => { return parseInt(Module.canvas.style.width); },  
+ 517436: () => { if (document.fullscreenElement) return 1; },  
+ 517482: () => { return Module.canvas.width; },  
+ 517514: () => { return screen.width; },  
+ 517539: () => { return window.innerWidth; },  
+ 517565: () => { return window.innerHeight; },  
+ 517592: () => { if (document.fullscreenElement) return 1; },  
+ 517638: () => { return Module.canvas.width; },  
+ 517670: () => { return screen.width; },  
+ 517695: () => { document.exitFullscreen(); },  
+ 517722: () => { if (document.fullscreenElement) return 1; },  
+ 517768: () => { return Module.canvas.width; },  
+ 517800: () => { return parseInt(Module.canvas.style.width); },  
+ 517848: () => { document.exitFullscreen(); },  
+ 517875: ($0) => { Module.canvas.style.opacity = $0; },  
+ 517913: () => { return screen.width; },  
+ 517938: () => { return screen.height; },  
+ 517964: () => { return window.screenX; },  
+ 517991: () => { return window.screenY; },  
+ 518018: () => { return window.devicePixelRatio; },  
+ 518054: ($0) => { navigator.clipboard.writeText(UTF8ToString($0)); },  
+ 518107: ($0) => { Module.canvas.style.cursor = UTF8ToString($0); },  
+ 518158: () => { Module.canvas.style.cursor = 'none'; },  
+ 518195: ($0, $1, $2, $3) => { try { navigator.getGamepads()[$0].vibrationActuator.playEffect('dual-rumble', { startDelay: 0, duration: $3, weakMagnitude: $1, strongMagnitude: $2 }); } catch (e) { try { navigator.getGamepads()[$0].hapticActuators[0].pulse($2, $3); } catch (e) { } } },  
+ 518451: ($0) => { Module.canvas.style.cursor = UTF8ToString($0); },  
+ 518502: () => { if (document.pointerLockElement) return 1; },  
+ 518549: () => { if (document.fullscreenElement) return 1; },  
+ 518595: () => { return window.innerWidth; },  
+ 518621: () => { return window.innerHeight; }
 };
 function install_paste_hook() { console.log("[clipboard] installing paste hook"); window.addEventListener("paste", function(e) { console.log("[clipboard] paste event fired", e); const text = e.clipboardData.getData("text/plain"); console.log("[clipboard] text:", text); if (!text) { return; } const size = lengthBytesUTF8(text)+1; const ptr = _malloc(size); stringToUTF8(text, ptr, size); _web_paste_text(ptr); _free(ptr); e.preventDefault(); }); }
 function SetCanvasIdJs(out,outSize) { var canvasId = "#" + Module.canvas.id; stringToUTF8(canvasId, out, outSize); }
@@ -10876,7 +10961,11 @@ var wasmImports = {
   /** @export */
   _abort_js: __abort_js,
   /** @export */
+  _gmtime_js: __gmtime_js,
+  /** @export */
   _localtime_js: __localtime_js,
+  /** @export */
+  _mktime_js: __mktime_js,
   /** @export */
   _mmap_js: __mmap_js,
   /** @export */
@@ -11328,7 +11417,11 @@ var wasmImports = {
   /** @export */
   glDeleteBuffers: _glDeleteBuffers,
   /** @export */
+  glDeleteFramebuffers: _glDeleteFramebuffers,
+  /** @export */
   glDeleteProgram: _glDeleteProgram,
+  /** @export */
+  glDeleteRenderbuffers: _glDeleteRenderbuffers,
   /** @export */
   glDeleteShader: _glDeleteShader,
   /** @export */
@@ -11367,6 +11460,8 @@ var wasmImports = {
   glGetAttribLocation: _glGetAttribLocation,
   /** @export */
   glGetFloatv: _glGetFloatv,
+  /** @export */
+  glGetFramebufferAttachmentParameteriv: _glGetFramebufferAttachmentParameteriv,
   /** @export */
   glGetIntegerv: _glGetIntegerv,
   /** @export */
