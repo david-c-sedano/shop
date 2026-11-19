@@ -1,5 +1,10 @@
 /* Handles discount code storage and checkout discount calculations. */
 
+// Date-only codes expire after the full UTC day; timestamps expire at the exact UTC time.
+#define DISCOUNT_NOT_EXPIRED "(expiration_date IS NULL OR expiration_date='' OR " \
+    "CASE WHEN length(expiration_date)=10 THEN datetime(expiration_date,'+1 day') " \
+    "ELSE datetime(expiration_date) END>datetime('now'))"
+
 bool discount_init(Shop* shop) {
     const char* discount_schema =
         "CREATE TABLE IF NOT EXISTS discount_codes ("
@@ -9,12 +14,20 @@ bool discount_init(Shop* shop) {
             "discount_value NUMERIC NOT NULL,"
             "is_active INTEGER NOT NULL DEFAULT 1,"
             "expiration_date TEXT,"
-            "created_at TEXT DEFAULT CURRENT_TIMESTAMP"
+            "created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
+            "deleted_at TEXT"
         ");";
 
     if (sqlite3_exec(shop->admin.db, discount_schema, NULL, NULL, NULL) != SQLITE_OK) {
         return false;
     }
+
+    sqlite3_stmt* columns = NULL;
+    if (sqlite3_prepare_v2(shop->admin.db,"SELECT 1 FROM pragma_table_info('discount_codes') WHERE name='deleted_at'",-1,&columns,NULL) != SQLITE_OK) return false;
+    bool has_deleted_at = sqlite3_step(columns) == SQLITE_ROW;
+    sqlite3_finalize(columns);
+    if (!has_deleted_at && sqlite3_exec(shop->admin.db,
+        "ALTER TABLE discount_codes ADD COLUMN deleted_at TEXT",NULL,NULL,NULL) != SQLITE_OK) return false;
 
     // Percent codes take a percentage off the subtotal.
     // Fixed codes take a set dollar amount off.
@@ -26,7 +39,7 @@ bool discount_init(Shop* shop) {
         "('NEWMEMBER20', 'percent', 20, 1, NULL), "
         "('test0', 'fixed', 0.01, 1, NULL), "
         "('test0-', 'percent', 10, 0, NULL), "
-        "('NEWYEAR', 'percent', 25, 1, NULL), "
+        "('SCHOOL26', 'percent', 25, 1, NULL), "
         "('COUPON10', 'percent', 10, 1, NULL);";
 
     return sqlite3_exec(shop->admin.db, starter_discount_sql, NULL, NULL, NULL) == SQLITE_OK;
@@ -54,8 +67,8 @@ bool discount_apply(Shop* shop, float subtotal) {
         "SELECT id, discount_type, discount_value "
         "FROM discount_codes "
         "WHERE code = ?1 COLLATE NOCASE "
-        "AND is_active = 1 "
-        "AND (expiration_date IS NULL OR expiration_date = '' OR date(expiration_date) >= date('now')) "
+        "AND is_active = 1 AND deleted_at IS NULL "
+        "AND " DISCOUNT_NOT_EXPIRED " "
         "LIMIT 1;";
 
     sqlite3_stmt* statement = NULL;

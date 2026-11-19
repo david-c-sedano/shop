@@ -349,9 +349,8 @@ void init_admin_panel(Admin_Panel *admin, Text_Editor* ed) {
 }
 
 void admin_load_csv_popup(Admin_Panel* admin) {
-    bool popup = ImGui_BeginPopupModal(
+    bool popup = panel_begin_modal(
             "Import CSV", 
-            NULL, 
             ImGuiWindowFlags_AlwaysAutoResize
     );
     if (popup) {

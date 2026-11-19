@@ -10,9 +10,10 @@ void do_advanced_search(Shop* shop, Adv_Search_Panel *adv_search) {
         APPEND_SQL(sql,
             "AND ("
                 "name LIKE '%%%s%%' "
+                "OR display LIKE '%%%s%%' "
                 "OR description LIKE '%%%s%%'"
             ") ",
-            escaped, escaped
+            escaped, escaped, escaped
         );
         sqlite3_free(escaped);
     }

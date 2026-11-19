@@ -62,9 +62,23 @@ void update_home(Shop* shop) {
         Home_Button button = shop->home_buttons[i];
         if (button.callback) {
             button.callback(shop);
+        } else if (button.placeholder_label && button.transition != SALES_SCREEN && button.transition != USERS_SCREEN) {
+            return;
         }
         screen_swap(shop, button.transition);
     }
+}
+
+static void draw_home_placeholder(Rectangle bounds, const char* label, bool hovered) {
+    Color fill = hovered ? (Color){49, 79, 103, 255} : (Color){36, 59, 78, 255};
+    DrawRectangleRounded(bounds, 0.32f, 12, fill);
+    DrawRectangleRoundedLinesEx(bounds, 0.32f, 12, 2.0f, (Color){107, 139, 164, 255});
+
+    float font_size = 25.0f * bounds.width / HOME_BUTTON_SIZE;
+    Vector2 size = MeasureTextEx(SHOP_FONT, label, font_size, 1.0f);
+    Vector2 pos = {bounds.x + (bounds.width - size.x) * 0.5f,
+                   bounds.y + (bounds.height - size.y) * 0.5f};
+    DrawTextEx(SHOP_FONT, label, pos, font_size, 1.0f, SHOP_WHITE);
 }
 
 void draw_home_buttons(Shop* shop) {
@@ -91,6 +105,10 @@ void draw_home_buttons(Shop* shop) {
             dest.y += (old_h - dest.height) * 0.5f;
         }
 
+        if (button.placeholder_label) {
+            draw_home_placeholder(dest, button.placeholder_label, hovered);
+            continue;
+        }
         Color tint = hovered ? WHITE : shade;
         DrawTexturePro(button.texture, source, dest, (Vector2){0,0}, 0.0, tint);
     }
@@ -172,26 +190,49 @@ void draw_home(Shop* shop) {
     draw_home_buttons(shop);
 }
 
+static void all_products_display_callback(Shop* shop) {
+    arena_free(&shop->display.alloc);
+    shop->display = query_items(shop, "SELECT " ITEM_COLUMNS " FROM items ORDER BY category, display;");
+    shop->scroll = 0.0f;
+    shop->scroll_target = 0.0f;
+}
+
 void chairs_display_callback(Shop* shop) {
     shop->display = query_items(shop,
         "SELECT " ITEM_COLUMNS " FROM items "
-        "WHERE category = 'chairs';"
+        "WHERE category = '" ITEM_CATEGORY_CHAIRS "';"
     );
+    shop->display.category_filter = ITEM_CATEGORY_CHAIRS;
 }
 void furniture_display_callback(Shop* shop) {
     shop->display = query_items(shop,
         "SELECT " ITEM_COLUMNS " FROM items "
-        "WHERE category = 'furniture';"
+        "WHERE category = '" ITEM_CATEGORY_FURNITURE "';"
     );
+    shop->display.category_filter = ITEM_CATEGORY_FURNITURE;
 }
 void large_display_callback(Shop* shop) {
     shop->display = query_items(shop,
         "SELECT " ITEM_COLUMNS " FROM items "
-        "WHERE category = 'large';"
+        "WHERE category = '" ITEM_CATEGORY_LARGE "';"
     );
+    shop->display.category_filter = ITEM_CATEGORY_LARGE;
 }
 
 void init_home_menu_buttons(Shop* shop) {
+    shop->home_button_count = 0;
+    shop->bottom_row_scroll = 0.0f;
+    shop->bottom_row_scroll_target = 0.0f;
+
+    bool is_admin = shop_is_admin(shop);
+    //TODO: add all products to regular user view?????? maybe?????????????
+    if (is_admin) {
+        add_home_button(shop, (Home_Button){
+            .transition = DISPLAY_SCREEN,
+            .callback = all_products_display_callback,
+            .placeholder_label = "All Products",
+        });
+    }
     add_home_button(shop, (Home_Button) {
         .texture = CHAIRS_HOME_ICON,
         .transition = DISPLAY_SCREEN,
@@ -207,6 +248,10 @@ void init_home_menu_buttons(Shop* shop) {
         .transition = DISPLAY_SCREEN,
         .callback = large_display_callback
     });
+    if (is_admin) {
+        add_home_button(shop, (Home_Button){.placeholder_label = "Sales", .transition = SALES_SCREEN});
+        add_home_button(shop, (Home_Button){.placeholder_label = "Users & Orders", .transition = USERS_SCREEN});
+    }
     add_home_button(shop, (Home_Button) {
         .texture = ACCOUNT_SETTINGS_HOME_ICON,
         .transition = ACCOUNT_SCREEN,

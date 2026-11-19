@@ -38,6 +38,12 @@ bool order_save_purchase(Shop* shop, int discount_code_id, float subtotal, float
         return false;
     }
 
+    if (!auth_refresh_session(shop) || shop_is_admin(shop) ||
+        !sales_checkout_matches(shop, discount_code_id, subtotal, discount_amount)) {
+        sqlite3_exec(database, "ROLLBACK;", NULL, NULL, NULL);
+        return false;
+    }
+
     const char* order_sql =
         "INSERT INTO orders(user_id, discount_code_id, subtotal, discount_amount, tax_amount, total_amount) "
         "VALUES(?1, ?2, ?3, ?4, ?5, ?6);";

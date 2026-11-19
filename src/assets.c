@@ -257,6 +257,16 @@ void DrawTextWordWrapped3D(
         if (!*p) {
             break;
         }
+        if (*p == '\n') {
+            if (line[0]) {
+                DrawTextCentered3D(font, line,
+                    (Vector3){pos.x, pos.y - y, pos.z}, font_size, spacing, tint);
+                line[0] = '\0';
+            }
+            y += font_size + line_spacing;
+            p++;
+            continue;
+        }
         // read word
         int word_len = 0;
         while (
@@ -291,9 +301,6 @@ void DrawTextWordWrapped3D(
         }
         p += word_len;
 
-        if (*p == '\n') {
-            /// TODO? ehhhh who needs this crap?
-        }
     }
 
     if (line[0]) {

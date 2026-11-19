@@ -76,6 +76,7 @@ typedef struct {
 
 typedef struct {
     bool success;
+    bool is_admin;
     int user_id;
     char username[100];
     char email[160];
@@ -86,6 +87,7 @@ typedef struct {
     bool register_mode;
     bool forgot_password_mode;
     bool logged_in;
+    bool is_admin;
     bool show_password;
     bool purchase_history_tab;
     int user_id;
@@ -111,6 +113,8 @@ typedef enum {
     ACCOUNT_SCREEN,
     CART_SCREEN,
     CHECKOUT_SCREEN,
+    SALES_SCREEN,
+    USERS_SCREEN,
 } Screen;
 
 typedef void (*Home_Button_Callback)(Shop *shop);
@@ -119,18 +123,29 @@ typedef struct {
     Texture2D texture;
     Screen transition;
     Home_Button_Callback callback;
+    const char* placeholder_label;
 } Home_Button;
 
 typedef struct {
     int id;
     char name[100];
     char description[500];
-    float price;
-    float sale_price;
+    double price;
+    double sale_price;
     int stock;
     char category[100];
     char display[100];
 } Item;
+
+typedef struct {
+    bool active;
+    bool on_sale;
+    bool group_sale;
+    Item item;
+    sqlite3_int64 stock;
+    double original_sale_price;
+    char error[160];
+} Item_Editor;
 
 static inline bool item_is_on_sale(Item item) {
     return item.sale_price > 0 &&
@@ -160,7 +175,77 @@ typedef struct {
     Item* items;
     int count, capacity;
     Arena alloc;
+    const char* category_filter;
 } Item_List;
+
+typedef struct {
+    int type;
+    int sort;
+    bool descending;
+    char category[100], product[100];
+    bool use_min, use_max;
+    double minimum, maximum;
+    char start_from[16], start_to[16], end_from[16], end_to[16];
+} Sales_Filter;
+
+typedef struct {
+    int form; // 1 = discount code, 2 = individual sale, 3 = group sale
+    sqlite3_int64 editing_id, original_start;
+    bool edit_past, edit_started, confirm_delete, start_locked_notice;
+    char delete_name[100];
+    char name[100], search[100], starts[32], ends[32], expires[32];
+    bool scheduled, has_end, percent, enabled;
+    double value;
+    Item_List products;
+    bool* selected;
+    int pages[3][3];
+    sqlite3_int64 expanded_sale;
+    sqlite3_int64 confirm_end;
+    bool open_end_confirmation;
+    char end_name[100];
+    sqlite3_int64 refreshed_at;
+    RenderTexture2D page_target;
+    char message[256], error[256];
+    char search_input[100], keywords[100];
+    bool search_active, advanced_open;
+    float scroll_y, search_offset;
+    bool scroll_to_top, show_back_to_top;
+    float back_to_top_alpha;
+    bool page_can_scroll;
+    int current_tab;
+    Sales_Filter filters[3], filter_draft;
+} Sales_State;
+
+typedef struct {
+    int role, status, sort;
+    bool descending, use_min, use_max;
+    double minimum, maximum;
+    char customer[100], date_from[16], date_to[16];
+} Users_Filter;
+
+typedef struct {
+    sqlite3_int64 id, user_id;
+} Users_Expanded;
+
+typedef struct {
+    int current_tab, requested_tab, pages[3], page_sizes[3];
+    sqlite3_int64 revealed_id, editing_id, orders_user_id;
+    Users_Expanded* expanded;
+    int expanded_count, expanded_capacity;
+    bool edit_role, original_role, original_enabled;
+    int confirmation;
+    char username[100], email[160], original_username[100], original_email[160];
+    char orders_username[100], search_input[100], keywords[100];
+    char orders_search_input[100], orders_keywords[100];
+    char message[256], error[256];
+    bool search_active, advanced_open, scroll_to_top, page_can_scroll;
+    bool orders_completed[2];
+    int order_pages[2][2];
+    float scroll_y, back_to_top_alpha;
+    bool show_back_to_top;
+    RenderTexture2D page_target;
+    Users_Filter filters[3], filter_draft;
+} Users_State;
 
 typedef struct {
     bool is_model;
@@ -177,6 +262,9 @@ typedef struct Shop {
     Admin_Panel admin;
     Adv_Search_Panel adv_search;
     Account_State account;
+    Item_Editor item_editor;
+    Sales_State sales;
+    Users_State users;
 
     Item_Resource_Table item_resources;
     bool paused;
@@ -221,6 +309,10 @@ typedef struct Shop {
     Screen transition_target;
 } Shop;
 
+static inline bool shop_is_admin(const Shop* shop) {
+    return shop->account.logged_in && shop->account.is_admin;
+}
+
 void strip_file_name(char *path);
 
 void shop_render_pass(Shop* shop);
@@ -235,6 +327,7 @@ float carousel_item_alpha(Item_List items, float scroll, float spacing);
 Item_List query_items(Shop* shop, const char* sql);
 void reset_item_list(Item_List* list);
 void draw_button(Shop* shop, Rectangle bounds, const char* label, Color color);
+bool panel_begin_modal(const char* title, ImGuiWindowFlags flags);
 bool button_event(Shop* shop, Rectangle bounds);
 Rectangle cart_button_bounds(Shop* shop);
 Rectangle back_button_bounds(Shop* shop);
@@ -268,10 +361,20 @@ bool auth_init(Shop* shop);
 Auth_Result auth_login(Shop* shop, const char* username, const char* password);
 Auth_Result auth_register(Shop* shop, const char* username, const char* password);
 void auth_logout(Shop* shop);
+bool auth_refresh_session(Shop* shop);
+void users_collapse_all(Shop* shop);
 void update_account(Shop* shop);
 void draw_account(Shop* shop);
 void account_panel(Shop* shop);
 void draw_purchase_history(Shop* shop);
+void open_item_editor(Shop* shop, Item item);
+bool sales_init(Shop* shop);
+bool sales_refresh(Shop* shop);
+bool sales_checkout_matches(Shop* shop, int code_id, float subtotal, float discount);
+Rectangle advanced_search_button_bounds(Shop* shop);
+bool search_bar_event(Shop* shop);
+void draw_search_bar(Shop* shop);
+void sales_close_form(Shop* shop);
 
 bool init_shop(Shop *shop);
 void update_shop(Shop *shop);
@@ -287,6 +390,9 @@ void draw_shop(Shop *shop);
 #define ITEM_SALE_PRICE_COLUMN 7
 
 #define ITEM_COLUMNS "id, name, description, price, stock, category, display, sale_price"
+#define ITEM_CATEGORY_CHAIRS "chairs"
+#define ITEM_CATEGORY_FURNITURE "furniture"
+#define ITEM_CATEGORY_LARGE "large"
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 

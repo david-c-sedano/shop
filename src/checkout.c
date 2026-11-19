@@ -206,6 +206,11 @@ void update_checkout(Shop* shop) {
             return;
         }
 
+        if (!sales_refresh(shop)) {
+            snprintf(shop->checkout_message, sizeof(shop->checkout_message), "Could not refresh prices. Try again.");
+            return;
+        }
+        if (shop->discount_code[0]) discount_apply(shop, cart_subtotal(shop));
         float subtotal = cart_subtotal(shop);
         float discount_amount = shop->applied_discount_amount;
         float taxable_amount = subtotal - discount_amount;

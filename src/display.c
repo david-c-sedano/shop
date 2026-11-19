@@ -24,7 +24,7 @@ void draw_product_information_cube(Shop* shop, Item item, Vector3 pos, float alp
         snprintf(price, sizeof(price), "ON SALE: $%.2f", item.sale_price);
         // Show the original price and rounded percentage saved on all sale items.
         int percent_off = item.price > 0.0f
-            ? (int)roundf((item.price - item.sale_price) * 100.0f / item.price)
+            ? (int)round((1.0 - item.sale_price / item.price) * 100.0)
             : 0;
         snprintf(original_price, sizeof(original_price),
                  "Was $%.2f  (%d%% OFF)", item.price, percent_off);
@@ -177,7 +177,11 @@ void update_display(Shop* shop) {
             Item item = shop->display.items[index];
             item.stock = item_available_stock(shop, item.id);
 
-            add_to_cart(shop, item);
+            if (shop_is_admin(shop)) {
+                open_item_editor(shop, item);
+            } else {
+                add_to_cart(shop, item);
+            }
         }
     }
 }
@@ -211,6 +215,10 @@ void draw_display(Shop* shop) {
     EndMode3D();
 
     if(shop->display.count > 0){
+        if (shop_is_admin(shop)) {
+            draw_button(shop, add_to_cart_button_bounds(shop), "EDIT", SHOP_BLUE);
+            return;
+        }
         int index = carousel_focused_item_index(
             shop->display, 
             shop->scroll, 

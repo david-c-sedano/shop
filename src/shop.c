@@ -40,6 +40,9 @@
 #include "cart_save.c"
 #include "purchases.c"
 #include "account.c"
+#include "sales.c"
+#include "users.c"
+#include "item_editor.c"
 #include "web_clipboard.c"
 
 int main(int argc, char* argv[]) {
@@ -68,12 +71,16 @@ int main(int argc, char* argv[]) {
     }
 
 	while (!WindowShouldClose()) {
+        if (shop.sales.refreshed_at != (sqlite3_int64)time(NULL)) {
+            auth_refresh_session(&shop);
+            sales_refresh(&shop);
+        }
         // INPUT
         bool admin_shortcut = (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_A);
         if (admin_shortcut) {
             shop.admin.active = !shop.admin.active;
         }
-        shop.paused = shop.admin.active || shop.adv_search.active;
+        shop.paused = shop.admin.active || shop.adv_search.active || shop.item_editor.active || shop.sales.advanced_open || shop.users.advanced_open;
         
         // UPDATE
         if (!shop.paused) {
@@ -94,6 +101,10 @@ int main(int argc, char* argv[]) {
     if (shop.account.logged_in) {
         cart_save(&shop);
     }
+    sales_close_form(&shop);
+    if (shop.sales.page_target.id) UnloadRenderTexture(shop.sales.page_target);
+    users_collapse_all(&shop);
+    if (shop.users.page_target.id) UnloadRenderTexture(shop.users.page_target);
     sqlite3_close(shop.admin.db);
     arena_free(&shop.admin.current_ed->alloc);
     rlImGuiShutdown();
@@ -157,21 +168,30 @@ void ui_render_pass(Shop* shop) {
     if (shop->admin.active) {
         admin_panel(&shop->admin);
     }
+    if (!shop->admin.active && shop->item_editor.active && shop_is_admin(shop)) {
+        item_editor_panel(shop);
+    }
     if (shop->adv_search.active) {
         adv_search_panel(shop, &shop->adv_search);
     }
     if (shop->screen == ACCOUNT_SCREEN && !shop->admin.active && !shop->adv_search.active) {
         account_panel(shop);
     }
-    rlImGuiEnd();
+    if (shop->screen == USERS_SCREEN && !shop->admin.active) users_dashboard(shop);
+    if (shop->screen == SALES_SCREEN && !shop->admin.active) sales_dashboard(shop);
+    if ((shop->screen == SALES_SCREEN || shop->screen == USERS_SCREEN) && !shop->admin.active) sales_render_ui(shop);
+    else rlImGuiEnd();
 
-    if (shop->screen == ACCOUNT_SCREEN && shop->transition_alpha > 0.0f) {
+    if ((shop->screen == ACCOUNT_SCREEN || shop->screen == SALES_SCREEN || shop->screen == USERS_SCREEN) && shop->transition_alpha > 0.0f) {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, shop->transition_alpha));
     }
 }
 
 void screen_swap(Shop* shop, Screen target) {
     if (shop->transitioning) return;
+    if ((target == SALES_SCREEN || target == USERS_SCREEN) && !shop_is_admin(shop)) return;
+    if (shop->screen == USERS_SCREEN) shop->users.revealed_id = 0;
+    if (shop_is_admin(shop) && (target == CART_SCREEN || target == CHECKOUT_SCREEN)) return;
     shop->transitioning = true;
     shop->fading_out = true;
     shop->transition_target = target;
@@ -330,10 +350,10 @@ Item_List query_items(Shop* shop, const char* sql) {
             CELL(&result, ITEM_DESC_COLUMN, y)
         );
 
-        item.price = strtof(CELL(&result, ITEM_PRICE_COLUMN, y), NULL);
+        item.price = strtod(CELL(&result, ITEM_PRICE_COLUMN, y), NULL);
         const char *sale = CELL(&result, ITEM_SALE_PRICE_COLUMN, y);
 
-        item.sale_price = sale ? strtof(sale, NULL) : 0.0f;
+        item.sale_price = sale ? strtod(sale, NULL) : 0.0;
         item.stock = atoi(CELL(&result, ITEM_STOCK_COLUMN, y));
         snprintf(item.category, sizeof(item.category), "%s", 
             CELL(&result, ITEM_CATEGORY_COLUMN, y)
@@ -355,6 +375,29 @@ void reset_item_list(Item_List* list) {
 }
 
 /* REUSABLE UI "COMPONENTS" */
+bool panel_begin_modal(const char* title, ImGuiWindowFlags flags) {
+    ImVec2 parent = ImGui_GetWindowPos(), size = ImGui_GetWindowSize();
+    ImVec2 end = {parent.x+size.x,parent.y+size.y};
+    ImU32 color = ImGui_GetColorU32(ImGuiCol_ModalWindowDimBg);
+    ImGui_PushStyleColor(ImGuiCol_ModalWindowDimBg,0);
+    bool visible = ImGui_BeginPopupModal(title,NULL,flags);
+    ImGui_PopStyleColor();
+    if (visible) {
+        ImVec2 popup = ImGui_GetWindowPos(), popup_size = ImGui_GetWindowSize();
+        ImVec2 top = {Clamp(popup.x,parent.x,end.x),Clamp(popup.y,parent.y,end.y)};
+        ImVec2 bottom = {Clamp(popup.x+popup_size.x,parent.x,end.x),Clamp(popup.y+popup_size.y,parent.y,end.y)};
+        ImDrawList* list = ImGui_GetWindowDrawList();
+        // Keep the backdrop above the parent's child controls and outside the confirmation.
+        ImDrawList_PushClipRect(list,parent,end,false);
+        ImDrawList_AddRectFilled(list,parent,(ImVec2){end.x,top.y},color);
+        ImDrawList_AddRectFilled(list,(ImVec2){parent.x,bottom.y},end,color);
+        ImDrawList_AddRectFilled(list,(ImVec2){parent.x,top.y},(ImVec2){top.x,bottom.y},color);
+        ImDrawList_AddRectFilled(list,(ImVec2){bottom.x,top.y},(ImVec2){end.x,bottom.y},color);
+        ImDrawList_PopClipRect(list);
+    }
+    return visible;
+}
+
 void draw_button(Shop* shop, Rectangle bounds, const char* label, Color color) {
     Vector2 mouse = mouse_pos_in_shop(shop);
     bool hovered = CheckCollisionPointRec(mouse, bounds);
@@ -402,7 +445,7 @@ void back_button_event(Shop* shop) {
 /* SEARCH BAR */
 Rectangle advanced_search_button_bounds(Shop* shop) {
     float screen_w = shop->render_target.texture.width;
-    return (Rectangle){ screen_w - 24.0 - 80.0, 24.0, 80.0, 60.0 };
+    return (Rectangle){ screen_w - 24.0 - 80.0, 24.0 - shop->sales.search_offset, 80.0, 60.0 };
 }
 
 Rectangle search_bar_bounds(Shop* shop) {
@@ -591,6 +634,10 @@ bool init_shop(Shop *shop) {
         printf("failed to initialize order database tables\n");
         return false;
     }
+    if (!sales_init(shop)) {
+        printf("failed to initialize sales: %s\n", shop->sales.error);
+        return false;
+    }
     schema_list_refresh(admin);
 
     // Renderer setup
@@ -688,7 +735,7 @@ void update_shop(Shop *shop) {
         if (button_event(shop, advanced_search_button_bounds(shop))) {
             shop->adv_search.active = true;
         }
-        if (button_event(shop, cart_button_bounds(shop))) {
+        if (!shop_is_admin(shop) && button_event(shop, cart_button_bounds(shop))) {
             screen_swap(shop, CART_SCREEN);
         }
         break;
@@ -699,6 +746,7 @@ void update_shop(Shop *shop) {
 
     case DISPLAY_SCREEN:
         update_display(shop);
+        if (shop->item_editor.active) break;
         if (button_event(shop, back_button_bounds(shop))) {
             screen_swap(shop, HOME_SCREEN);
         }
@@ -719,8 +767,26 @@ void update_shop(Shop *shop) {
         if (button_event(shop, advanced_search_button_bounds(shop))) {
             shop->adv_search.active = true;
         }
-        if(button_event(shop, cart_button_bounds(shop))){
+        if (!shop_is_admin(shop) && button_event(shop, cart_button_bounds(shop))) {
             screen_swap(shop, CART_SCREEN);
+        }
+        break;
+
+    case USERS_SCREEN:
+        if (!shop->users.editing_id && !shop->users.advanced_open) {
+            users_search_bar(shop,true);
+            if (button_event(shop,back_button_bounds(shop))) screen_swap(shop,HOME_SCREEN);
+        }
+        break;
+
+    case SALES_SCREEN:
+        if (!shop->sales.form && !shop->sales.confirm_end) sales_search_bar(shop,true);
+        if (!shop->sales.form && !shop->sales.confirm_end && !shop->sales.advanced_open &&
+            button_event(shop,sales_create_button_bounds(shop))) {
+            sales_open_form(shop,shop->sales.current_tab+1);
+        }
+        if (!shop->sales.form && !shop->sales.confirm_end && !shop->sales.advanced_open && button_event(shop,back_button_bounds(shop))) {
+            screen_swap(shop,HOME_SCREEN);
         }
         break;
 
@@ -788,7 +854,7 @@ void draw_shop(Shop *shop) {
         draw_home(shop);
         draw_search_bar(shop);
         draw_button(shop, advanced_search_button_bounds(shop), "Adv.", SHOP_BLUE);
-        draw_cart_button_with_count(shop);
+        if (!shop_is_admin(shop)) draw_cart_button_with_count(shop);
         break;
 
     case ACCOUNT_SCREEN:
@@ -802,7 +868,17 @@ void draw_shop(Shop *shop) {
         draw_search_bar(shop);
         draw_button(shop, advanced_search_button_bounds(shop), "Adv.", SHOP_BLUE);
         draw_button(shop, back_button_bounds(shop), "< HOME", SHOP_GREEN);
-        draw_cart_button_with_count(shop);
+        if (!shop_is_admin(shop)) draw_cart_button_with_count(shop);
+        break;
+
+    case USERS_SCREEN:
+        ClearBackground(SHOP_BG);
+        users_search_bar(shop,false);
+        break;
+
+    case SALES_SCREEN:
+        ClearBackground(SHOP_BG);
+        sales_search_bar(shop,false);
         break;
 
     case CART_SCREEN:
@@ -817,7 +893,7 @@ void draw_shop(Shop *shop) {
         break;
     }
 
-    if (shop->screen != ACCOUNT_SCREEN && shop->transition_alpha > 0.0f) {
+    if (shop->screen != ACCOUNT_SCREEN && shop->screen != SALES_SCREEN && shop->screen != USERS_SCREEN && shop->transition_alpha > 0.0f) {
         DrawRectangle(0,0, screen_w,screen_h, Fade(BLACK, shop->transition_alpha));
     }
     if (shop->search_flash > 0.0f) {

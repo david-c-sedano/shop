@@ -100,7 +100,7 @@ void cart_clear(Shop* shop) {
 }
 
 bool cart_save(Shop* shop) {
-    if (!shop->account.logged_in || shop->account.user_id <= 0) {
+    if (!shop->account.logged_in || shop->account.user_id <= 0 || shop_is_admin(shop)) {
         return false;
     }
 
@@ -156,6 +156,9 @@ bool cart_load(Shop* shop) {
     }
 
     cart_clear(shop);
+    if (shop_is_admin(shop)) {
+        return false;
+    }
 
     const char* sql =
         "SELECT items.id, items.name, items.description, items.price, items.stock, "
@@ -184,12 +187,12 @@ bool cart_load(Shop* shop) {
         cart_item->item.id = sqlite3_column_int(statement, 0);
         cart_copy_text(cart_item->item.name, sizeof(cart_item->item.name), statement, 1);
         cart_copy_text(cart_item->item.description, sizeof(cart_item->item.description), statement, 2);
-        cart_item->item.price = (float)sqlite3_column_double(statement, 3);
+        cart_item->item.price = sqlite3_column_double(statement, 3);
         cart_item->item.stock = sqlite3_column_int(statement, 4);
         cart_copy_text(cart_item->item.category, sizeof(cart_item->item.category), statement, 5);
         cart_copy_text(cart_item->item.display, sizeof(cart_item->item.display), statement, 6);
         cart_item->quantity = sqlite3_column_int(statement, 7);
-        cart_item->item.sale_price = (float)sqlite3_column_double(statement, 8);
+        cart_item->item.sale_price = sqlite3_column_double(statement, 8);
 
         if (cart_item->quantity > cart_item->item.stock) {
             cart_item->quantity = cart_item->item.stock;
@@ -205,7 +208,7 @@ bool cart_load(Shop* shop) {
 }
 
 void cart_save_if_changed(Shop* shop) {
-    if (!shop->account.logged_in || shop->account.user_id <= 0) {
+    if (!shop->account.logged_in || shop->account.user_id <= 0 || shop_is_admin(shop)) {
         return;
     }
 
